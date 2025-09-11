@@ -78,13 +78,13 @@ export default function AuthPage() {
   const isSignup = mode === "signup";
 
   return (
-    <div className="h-svh flex items-center justify-center bg-[linear-gradient(to_right,#e2e2e2,#c9d6ff)]">
+    <div className="h-svh flex items-center justify-center bg-[linear-gradient(to_right,#e2e2e2,#c9d6ff)] p-4">
       <Toaster />
       <div className="relative w-full max-w-[900px] min-h-[480px] mx-auto overflow-hidden rounded-[30px] shadow-[0_5px_15px_rgba(0,0,0,0.35)] bg-white">
         {/* Forms Container */}
         <div className="relative w-full h-full">
           {/* Sign In Form */}
-          <div className={`absolute top-0 left-0 w-1/2 h-full p-10 transition-all duration-[700ms] ease-in-out ${isSignup ? "translate-x-full opacity-0 z-0" : "z-30"}`}>
+          <div className={`absolute top-0 left-0 w-full sm:w-1/2 h-full p-6 sm:p-10 transition-all duration-[700ms] ease-in-out ${isSignup ? "translate-x-full opacity-0 z-0 pointer-events-none" : "z-30"}`}>
             <h1 className="text-3xl font-bold text-center">Sign In</h1>
             <div className="my-5 w-full flex items-center justify-center">
               <Button type="button" variant="outline" className="w-full max-w-[280px] h-10 border-neutral-300 text-neutral-800 bg-white hover:bg-neutral-50 rounded-[8px] gap-2" onClick={handleGoogleAuth}>
@@ -113,7 +113,7 @@ export default function AuthPage() {
           </div>
 
           {/* Sign Up Form */}
-          <div className={`absolute top-0 left-0 w-1/2 h-full p-10 transition-all duration-[700ms] ease-in-out ${isSignup ? "translate-x-full opacity-100 z-30" : "opacity-0 z-0"}`}>
+          <div className={`absolute top-0 left-0 w-full sm:w-1/2 h-full p-6 sm:p-10 transition-all duration-[700ms] ease-in-out ${isSignup ? "translate-x-full opacity-100 z-30" : "opacity-0 z-0 pointer-events-none"}`}>
             <h1 className="text-2xl font-semibold text-center">Create Account</h1>
             <div className="my-5 w-full flex items-center justify-center">
               <Button type="button" variant="outline" className="w-full max-w-[280px] h-10 border-neutral-300 text-neutral-800 bg-white hover:bg-neutral-50 rounded-[8px] gap-2" onClick={handleGoogleAuth}>
@@ -145,10 +145,10 @@ export default function AuthPage() {
           </div>
         </div>
 
-         {/* Purple sliding overlay with toggle panels */}
-         <div className="pointer-events-none absolute inset-0">
+         {/* Purple sliding overlay with toggle panels - Hidden on mobile */}
+         <div className="pointer-events-none absolute inset-0 hidden sm:block">
            <div
-             className={`absolute inset-y-0 left-1/2 w-1/2 sm:left-1/2 bg-[linear-gradient(to_right,#5c6bc0,#512da8)] text-white transition-all duration-[600ms] ease-in-out ${isSignup ? "-translate-x-full" : "translate-x-0"}`}
+             className={`absolute inset-y-0 left-1/2 w-1/2 bg-[linear-gradient(to_right,#5c6bc0,#512da8)] text-white transition-all duration-[600ms] ease-in-out ${isSignup ? "-translate-x-full" : "translate-x-0"}`}
              style={{ 
                boxShadow: "0 5px 15px rgba(0,0,0,0.35)",
                borderRadius: isSignup ? "0 150px 150px 0" : "150px 0 0 150px"
@@ -156,8 +156,8 @@ export default function AuthPage() {
            />
          </div>
 
-        {/* Overlay content (two toggle panels) */}
-        <div className="absolute inset-0 grid grid-cols-2 max-sm:hidden z-20">
+        {/* Overlay content (two toggle panels) - Hidden on mobile */}
+        <div className="absolute inset-0 grid grid-cols-2 hidden sm:grid z-20">
           <div className={`flex items-center justify-center p-8 transition-transform duration-[600ms] ease-in-out ${isSignup ? "translate-x-0" : "-translate-x-[200%]"}`}>
             <div className="pointer-events-auto text-white text-center max-w-xs">
               <h2 className="text-2xl font-semibold">Welcome Back!</h2>
@@ -175,13 +175,15 @@ export default function AuthPage() {
         </div>
 
         {/* Mobile toggle buttons */}
-        <div className="sm:hidden p-4 flex gap-2">
-          <Button className="flex-1 rounded-[8px]" variant={isSignup ? "outline" : "default"} onClick={() => setMode("signin")}>
-            Sign In
-          </Button>
-          <Button className="flex-1 rounded-[8px]" variant={isSignup ? "default" : "outline"} onClick={() => setMode("signup")}>
-            Sign Up
-          </Button>
+        <div className="sm:hidden absolute bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200">
+          <div className="flex gap-2">
+            <Button className="flex-1 rounded-[8px]" variant={isSignup ? "outline" : "default"} onClick={() => setMode("signin")}>
+              Sign In
+            </Button>
+            <Button className="flex-1 rounded-[8px]" variant={isSignup ? "default" : "outline"} onClick={() => setMode("signup")}>
+              Sign Up
+            </Button>
+          </div>
         </div>
       </div>
     </div>
