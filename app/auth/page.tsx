@@ -47,7 +47,7 @@ export default function AuthPage() {
       return;
     }
     toast.success("Signed in!");
-    router.push("/dashboard");
+    router.push("/home");
   };
 
   const handleSignUp = async (values: z.infer<typeof signUpSchema>) => {
@@ -61,7 +61,19 @@ export default function AuthPage() {
       return;
     }
     toast.success("Account created!");
-    router.push("/dashboard");
+    router.push("/home");
+  };
+
+  const handleGoogleAuth = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/home`
+      }
+    });
+    if (error) {
+      toast.error(error.message);
+    }
   };
 
   const isSignup = mode === "signup";
@@ -76,7 +88,7 @@ export default function AuthPage() {
           <div className={`absolute top-0 left-0 w-1/2 h-full p-10 transition-all duration-[700ms] ease-in-out ${isSignup ? "translate-x-full opacity-0 z-0" : "z-30"}`}>
             <h1 className="text-3xl font-bold text-center">Sign In</h1>
             <div className="my-5 w-full flex items-center justify-center">
-              <Button type="button" variant="outline" className="w-full max-w-[280px] h-10 border-neutral-300 text-neutral-800 bg-white hover:bg-neutral-50 rounded-[8px] gap-2">
+              <Button type="button" variant="outline" className="w-full max-w-[280px] h-10 border-neutral-300 text-neutral-800 bg-white hover:bg-neutral-50 rounded-[8px] gap-2" onClick={handleGoogleAuth}>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="w-4 h-4">
                   <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.621 32.525 29.229 36 24 36c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.156 7.961 3.039l5.657-5.657C34.869 6.053 29.706 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.651-.389-3.917z"/>
                   <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.156 7.961 3.039l5.657-5.657C34.869 6.053 29.706 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/>
@@ -105,7 +117,7 @@ export default function AuthPage() {
           <div className={`absolute top-0 left-0 w-1/2 h-full p-10 transition-all duration-[700ms] ease-in-out ${isSignup ? "translate-x-full opacity-100 z-30" : "opacity-0 z-0"}`}>
             <h1 className="text-2xl font-semibold text-center">Create Account</h1>
             <div className="my-5 w-full flex items-center justify-center">
-              <Button type="button" variant="outline" className="w-full max-w-[280px] h-10 border-neutral-300 text-neutral-800 bg-white hover:bg-neutral-50 rounded-[8px] gap-2">
+              <Button type="button" variant="outline" className="w-full max-w-[280px] h-10 border-neutral-300 text-neutral-800 bg-white hover:bg-neutral-50 rounded-[8px] gap-2" onClick={handleGoogleAuth}>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="w-4 h-4">
                   <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.621 32.525 29.229 36 24 36c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.156 7.961 3.039l5.657-5.657C34.869 6.053 29.706 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.651-.389-3.917z"/>
                   <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.156 7.961 3.039l5.657-5.657C34.869 6.053 29.706 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/>
