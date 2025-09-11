@@ -6,7 +6,7 @@ import { supabaseBrowser } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 
 export default function HomePage() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<{ email?: string; user_metadata?: { username?: string; full_name?: string } } | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const supabase = supabaseBrowser();
