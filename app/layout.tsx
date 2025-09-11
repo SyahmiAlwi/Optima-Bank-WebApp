@@ -16,9 +16,9 @@ export const metadata: Metadata = {
   title: "OptimaBank",
   description: "OptimaBank authentication shell",
   icons: {
-    icon: "/favicon.ico?v=2",
-    apple: "/apple-touch-icon.png?v=2",
-    shortcut: "/favicon-32x32.png?v=2",
+    icon: "/favicon.ico?v=3",
+    apple: "/apple-touch-icon.png?v=3",
+    shortcut: "/favicon-32x32.png?v=3",
   },
   manifest: "/site.webmanifest",
 };
