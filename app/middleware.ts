@@ -2,18 +2,9 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-type CookieOptions = {
-  domain?: string
-  expires?: Date
-  httpOnly?: boolean
-  maxAge?: number
-  path?: string
-  sameSite?: 'strict' | 'lax' | 'none'
-  secure?: boolean
-}
 
 export async function middleware(req: NextRequest) {
-  let response = NextResponse.next({
+  const response = NextResponse.next({
     request: {
       headers: req.headers,
     },
