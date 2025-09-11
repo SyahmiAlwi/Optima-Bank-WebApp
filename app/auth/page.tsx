@@ -70,10 +70,10 @@ export default function AuthPage() {
     <div className="h-svh flex items-center justify-center bg-[linear-gradient(to_right,#e2e2e2,#c9d6ff)]">
       <Toaster />
       <div className="relative w-full max-w-[900px] min-h-[480px] mx-auto overflow-hidden rounded-[30px] shadow-[0_5px_15px_rgba(0,0,0,0.35)] bg-white">
-        {/* Forms grid (two halves) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2">
-          {/* Sign In (left) */}
-          <div className={`form-pane p-10 relative z-20 ${isSignup ? "sm:translate-x-full" : ""} transition-transform duration-[600ms] ease-in-out ${!isSignup ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
+        {/* Forms Container */}
+        <div className="relative w-full h-full">
+          {/* Sign In Form */}
+          <div className={`absolute top-0 left-0 w-1/2 h-full p-10 transition-all duration-[700ms] ease-in-out ${isSignup ? "translate-x-full opacity-0 z-0" : "z-30"}`}>
             <h1 className="text-3xl font-bold text-center">Sign In</h1>
             <div className="my-5 w-full flex items-center justify-center">
               <Button type="button" variant="outline" className="w-full max-w-[280px] h-10 border-neutral-300 text-neutral-800 bg-white hover:bg-neutral-50 rounded-[8px] gap-2">
@@ -101,9 +101,9 @@ export default function AuthPage() {
             </form>
           </div>
 
-          {/* Sign Up (right) */}
-          <div className={`p-10 relative z-20 transition-all duration-[600ms] ease-in-out ${isSignup ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
-             <h1 className="text-2xl font-semibold text-center">Create Account</h1>
+          {/* Sign Up Form */}
+          <div className={`absolute top-0 left-0 w-1/2 h-full p-10 transition-all duration-[700ms] ease-in-out ${isSignup ? "translate-x-full opacity-100 z-30" : "opacity-0 z-0"}`}>
+            <h1 className="text-2xl font-semibold text-center">Create Account</h1>
             <div className="my-5 w-full flex items-center justify-center">
               <Button type="button" variant="outline" className="w-full max-w-[280px] h-10 border-neutral-300 text-neutral-800 bg-white hover:bg-neutral-50 rounded-[8px] gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="w-4 h-4">
@@ -146,7 +146,7 @@ export default function AuthPage() {
          </div>
 
         {/* Overlay content (two toggle panels) */}
-        <div className="absolute inset-0 grid grid-cols-2 max-sm:hidden z-10">
+        <div className="absolute inset-0 grid grid-cols-2 max-sm:hidden z-20">
           <div className={`flex items-center justify-center p-8 transition-transform duration-[600ms] ease-in-out ${isSignup ? "translate-x-0" : "-translate-x-[200%]"}`}>
             <div className="pointer-events-auto text-white text-center max-w-xs">
               <h2 className="text-2xl font-semibold">Welcome Back!</h2>
