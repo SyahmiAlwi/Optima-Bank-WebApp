@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { supabaseBrowser } from "@/lib/supabase/client";
 import {
   FaUserCircle,
   FaHeart,
@@ -15,20 +16,32 @@ import { GiTwoCoins } from "react-icons/gi";
 import { getUser, fetchVouchers, signOutUser } from "./action";
 
 export default function HomePage() {
-  const [user, setUser] = useState<{ email?: string } | null>(null);
+  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState("All");
+  const searchParams = useSearchParams();
+  const categoryFromQuery = searchParams.get("category") || "All";
+  const [activeCategory, setActiveCategory] = useState(categoryFromQuery);
   const [vouchers, setVouchers] = useState<any[]>([]);
   const [profileOpen, setProfileOpen] = useState(false);
   const router = useRouter();
+
+  const supabase = supabaseBrowser();
+
+  // Sync category from query
+  useEffect(() => {
+    if (categoryFromQuery !== activeCategory) setActiveCategory(categoryFromQuery);
+  }, [categoryFromQuery]);
 
   // Fetch user
   useEffect(() => {
     const loadUser = async () => {
       const userData = await getUser();
+      if (!userData) {
+        router.push("/auth");
+        return;
+      }
       setUser(userData);
       setLoading(false);
-      if (!userData) router.push("/auth");
     };
     loadUser();
   }, [router]);
@@ -41,6 +54,54 @@ export default function HomePage() {
     };
     loadVouchers();
   }, []);
+
+  // Add voucher to cart (TypeScript-safe)
+  const addToCart = async (voucherId: number) => {
+    if (!user?.id) return alert("Please log in to add to cart");
+
+    try {
+      // Check if voucher is already in cart
+      const { data: existingCart, error: fetchError } = await supabase
+        .from("cart")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("voucher_id", voucherId)
+        .single();
+
+      if (fetchError && fetchError.code !== "PGRST116") {
+        console.error(fetchError);
+        return alert("Failed to add to cart");
+      }
+
+      if (existingCart) {
+        // Increment quantity
+        const { error: updateError } = await supabase
+          .from("cart")
+          .update({ quantity: existingCart.quantity + 1 })
+          .eq("id", existingCart.id);
+
+        if (updateError) {
+          console.error(updateError);
+          return alert("Failed to update cart");
+        }
+      } else {
+        // Insert new cart item
+        const { error: insertError } = await supabase
+          .from("cart")
+          .insert({ user_id: user.id, voucher_id: voucherId, quantity: 1 });
+
+        if (insertError) {
+          console.error(insertError);
+          return alert("Failed to add to cart");
+        }
+      }
+
+      alert("Voucher added to cart!");
+    } catch (err) {
+      console.error(err);
+      alert("Something went wrong");
+    }
+  };
 
   if (loading) {
     return (
@@ -55,7 +116,6 @@ export default function HomePage() {
 
   if (!user) return null;
 
-  // Filter vouchers
   const filteredVouchers =
     activeCategory === "All"
       ? vouchers
@@ -74,19 +134,23 @@ export default function HomePage() {
         <nav className="flex flex-col space-y-4">
           {["All", "Sport", "Food", "Entertainment"].map((cat) => (
             <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className={`flex items-center px-4 py-2 rounded-r-full ${
-                activeCategory === cat
-                  ? "bg-[#512da8] text-white"
-                  : "text-gray-700 hover:bg-gray-100"
-              }`}
-            >
-              {cat === "Sport" && <FaBasketballBall className="mr-2" />}
-              {cat === "Food" && <FaUtensils className="mr-2" />}
-              {cat === "Entertainment" && <FaFilm className="mr-2" />}
-              {cat === "All" ? "All Vouchers" : cat}
-            </button>
+  key={cat}
+  onClick={() => {
+    setActiveCategory(cat);
+    router.push(`/home?category=${cat}`); // ✅ update URL
+  }}
+  className={`flex items-center px-4 py-2 rounded-r-full ${
+    activeCategory === cat
+      ? "bg-[#512da8] text-white"
+      : "text-gray-700 hover:bg-gray-100"
+  }`}
+>
+  {cat === "Sport" && <FaBasketballBall className="mr-2" />}
+  {cat === "Food" && <FaUtensils className="mr-2" />}
+  {cat === "Entertainment" && <FaFilm className="mr-2" />}
+  {cat === "All" ? "All Vouchers" : cat}
+</button>
+
           ))}
         </nav>
       </aside>
@@ -96,7 +160,6 @@ export default function HomePage() {
         {/* Header */}
         <header className="flex items-center justify-between bg-white px-6 py-4 shadow-md relative">
           <div className="text-2xl font-bold text-[#512da8]">Optima Bank</div>
-
           <div className="flex-1 px-6">
             <input
               type="text"
@@ -177,7 +240,7 @@ export default function HomePage() {
                       />
                       <FaShoppingCart
                         className="cursor-pointer hover:text-[#512da8]"
-                        onClick={() => alert(`Added ${voucher.title} to cart`)}
+                        onClick={() => addToCart(voucher.id)}
                       />
                     </div>
                   </div>
