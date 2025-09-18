@@ -22,7 +22,7 @@ export default function HomePage() {
   const [promoIndex, setPromoIndex] = useState(0); // For carousel
   const router = useRouter();
 
-  // ✅ Fetch user
+  // Fetch user
   useEffect(() => {
     const loadUser = async () => {
       const userData = await getUser();
@@ -33,7 +33,7 @@ export default function HomePage() {
     loadUser();
   }, [router]);
 
-  // ✅ Fetch vouchers
+  // Fetch vouchers
   useEffect(() => {
     const loadVouchers = async () => {
       const data = await fetchVouchers();
@@ -55,13 +55,10 @@ export default function HomePage() {
 
   if (!user) return null;
 
-  // ✅ Get vouchers user can redeem based on totalpoints
   const userPoints = user.totalpoints ?? 0;
-  const redeemableVouchers = vouchers.filter(voucher => voucher.points <= userPoints);
-  // Sort descending, display all vouchers user can redeem in carousel
+  const redeemableVouchers = vouchers.filter((voucher) => voucher.points <= userPoints);
   const promoVouchers = redeemableVouchers.sort((a, b) => b.points - a.points);
 
-  // ✅ Filter vouchers by category
   const filteredVouchers =
     activeCategory === "All"
       ? vouchers
@@ -72,98 +69,19 @@ export default function HomePage() {
           return true;
         });
 
-  // Handle carousel boundary
   const handlePrev = () => setPromoIndex((prev) => Math.max(prev - 1, 0));
   const handleNext = () => setPromoIndex((prev) => Math.min(prev + 1, promoVouchers.length - 1));
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* ✅ Navbar (already has logo, links, coins, profile) */}
+      {/* Navbar */}
       <Navbar user={user} />
 
-      {/* ✅ Promo Carousel Section */}
-{promoVouchers.length > 0 && (
-  <div className="w-full flex flex-col items-center py-6">
-    <div
-      className="relative bg-gradient-to-r from-yellow-200 to-purple-200 rounded-xl shadow-lg flex items-center mb-6"
-      style={{
-        width: "700px",
-        minHeight: "190px",
-        padding: "24px 32px",
-        boxSizing: "border-box",
-      }}
-    >
-      {/* Left Button */}
-      <button
-        onClick={handlePrev}
-        disabled={promoIndex === 0}
-        className="absolute left-[-22px] top-1/2 transform -translate-y-1/2 text-2xl bg-white rounded-full shadow border border-gray-200 hover:bg-yellow-100 disabled:opacity-50 w-11 h-11 flex items-center justify-center"
-        aria-label="Previous voucher"
-      >
-        &#8592;
-      </button>
-
-      {/* Voucher Card Content */}
-      <div className="flex items-center gap-6 w-full">
-        {/* Image Container for full-width, rounded image */}
-        <div className="w-60 h-28 rounded-2xl overflow-hidden flex-shrink-0 bg-white">
-          <img
-            src={`/images/${promoVouchers[promoIndex].image || "default.jpg"}`}
-            alt={promoVouchers[promoIndex].title}
-            className="w-full h-full object-cover"
-          />
-        </div>
-        {/* Info */}
-<div className="flex flex-col items-center justify-center flex-1 ml-2 text-center">
-  <h3 className="text-xl font-bold text-[#512da8] mb-1">{promoVouchers[promoIndex].title}</h3>
-  <div className="flex items-center justify-center text-yellow-500 font-semibold text-lg mb-3">
-    <GiTwoCoins className="mr-2" />
-    {promoVouchers[promoIndex].points} points
-  </div>
-  <Button
-    className="bg-yellow-400 text-[#512da8] font-bold px-4 py-2 text-base shadow-lg rounded-lg w-40"
-    onClick={() => router.push(`/voucherdetails?id=${promoVouchers[promoIndex].id}`)}
-  >
-    Redeem Now
-  </Button>
-</div>
-      </div>
-
-      {/* Right Button */}
-      <button
-        onClick={handleNext}
-        disabled={promoIndex === promoVouchers.length - 1}
-        className="absolute right-[-22px] top-1/2 transform -translate-y-1/2 text-2xl bg-white rounded-full shadow border border-gray-200 hover:bg-yellow-100 disabled:opacity-50 w-11 h-11 flex items-center justify-center"
-        aria-label="Next voucher"
-      >
-        &#8594;
-      </button>
-    </div>
-<div className="flex items-center justify-center">
-  <span className="text-base font-bold text-[#512da8] drop-shadow">
-    {promoIndex + 1} / {promoVouchers.length} vouchers you can redeem
-  </span>
-</div>
-  </div>
-)}
-      {/* ✅ Search bar placed below promo section */}
-      <div className="w-full bg-gray-50 flex justify-center py-1">
-        <div className="w-full max-w-2xl px-1">
-          <input
-            type="text"
-            placeholder="Search vouchers..."
-            className="w-full px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#512da8]"
-          />
-        </div>
-      </div>
-
-      {/* ✅ Page Layout */}
+      {/* Page Layout: Sidebar + Main */}
       <div className="flex flex-1 min-h-screen">
         {/* Sidebar */}
-        <aside className="w-40 h-full border-r border-gray-200 flex flex-col">
-          <h2 className="px-4 text-lg font-bold text-[#512da8] mb-4">
-            Categories
-          </h2>
+        <aside className="w-40 h-full border-r border-gray-200 flex flex-col pt-6">
+          <h2 className="px-4 text-lg font-bold text-[#512da8] mb-4">Categories</h2>
           <nav className="flex flex-col space-y-2">
             {["All", "Sport", "Food", "Entertainment"].map((cat) => (
               <button
@@ -186,28 +104,78 @@ export default function HomePage() {
 
         {/* Main Content */}
         <main className="flex-1 p-6">
-          <h2 className="text-xl font-semibold mb-4">
-            {activeCategory} Vouchers
-          </h2>
+          <h2 className="text-xl font-semibold mb-4">{activeCategory} Vouchers</h2>
+
+          {/* Carousel below the title */}
+          {activeCategory === "All" && promoVouchers.length > 0 && (
+            <div className="w-full flex flex-col items-center py-6 mb-6">
+              <div
+                className="relative bg-gradient-to-r from-yellow-200 to-purple-200 rounded-xl shadow-lg flex items-center mb-6"
+                style={{ width: "700px", minHeight: "190px", padding: "24px 32px", boxSizing: "border-box" }}
+              >
+                {/* Left Button */}
+                <button
+                  onClick={handlePrev}
+                  disabled={promoIndex === 0}
+                  className="absolute left-[-22px] top-1/2 transform -translate-y-1/2 text-2xl bg-white rounded-full shadow border border-gray-200 hover:bg-yellow-100 disabled:opacity-50 w-11 h-11 flex items-center justify-center"
+                >
+                  &#8592;
+                </button>
+
+                {/* Voucher Content */}
+                <div className="flex items-center gap-6 w-full">
+                  <div className="w-60 h-28 rounded-2xl overflow-hidden flex-shrink-0 bg-white">
+                    <img
+                      src={`/images/${promoVouchers[promoIndex].image || "default.jpg"}`}
+                      alt={promoVouchers[promoIndex].title}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="flex flex-col items-center justify-center flex-1 ml-2 text-center">
+                    <h3 className="text-xl font-bold text-[#512da8] mb-1">{promoVouchers[promoIndex].title}</h3>
+                    <div className="flex items-center justify-center text-yellow-500 font-semibold text-lg mb-3">
+                      <GiTwoCoins className="mr-2" />
+                      {promoVouchers[promoIndex].points} points
+                    </div>
+                    <Button
+                      className="bg-yellow-400 text-[#512da8] font-bold px-4 py-2 text-base shadow-lg rounded-lg w-40"
+                      onClick={() => router.push(`/voucherdetails?id=${promoVouchers[promoIndex].id}`)}
+                    >
+                      Redeem Now
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Right Button */}
+                <button
+                  onClick={handleNext}
+                  disabled={promoIndex === promoVouchers.length - 1}
+                  className="absolute right-[-22px] top-1/2 transform -translate-y-1/2 text-2xl bg-white rounded-full shadow border border-gray-200 hover:bg-yellow-100 disabled:opacity-50 w-11 h-11 flex items-center justify-center"
+                >
+                  &#8594;
+                </button>
+              </div>
+              <div className="flex items-center justify-center">
+                <span className="text-base font-bold text-[#512da8] drop-shadow">
+                  {promoIndex + 1} / {promoVouchers.length} vouchers you can redeem
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Voucher grid */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {filteredVouchers.length > 0 ? (
               filteredVouchers.map((voucher, index) => (
-                <div
-                  key={index}
-                  className="bg-white rounded-lg shadow-md p-4"
-                >
+                <div key={index} className="bg-white rounded-lg shadow-md p-4">
                   <img
                     src={`/images/${voucher.image || "default.jpg"}`}
                     alt={voucher.title}
                     className="w-full h-32 object-cover rounded-md mb-3 cursor-pointer"
-                    onClick={() =>
-                      router.push(`/voucherdetails?id=${voucher.id}`)
-                    }
+                    onClick={() => router.push(`/voucherdetails?id=${voucher.id}`)}
                   />
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold text-gray-800">
-                      {voucher.title}
-                    </h3>
+                    <h3 className="font-semibold text-gray-800">{voucher.title}</h3>
                     <span className="flex items-center text-yellow-400 font-semibold text-sm">
                       <GiTwoCoins className="mr-1 text-yellow-400 text-base" />
                       {voucher.points}
@@ -221,16 +189,8 @@ export default function HomePage() {
                       Redeem
                     </Button>
                     <div className="flex space-x-3 text-gray-600 text-lg">
-                      <FaHeart
-                        className="cursor-pointer hover:text-red-500"
-                        onClick={() => router.push("/wishlist")}
-                      />
-                      <FaShoppingCart
-                        className="cursor-pointer hover:text-[#512da8]"
-                        onClick={() =>
-                          alert(`Added ${voucher.title} to cart`)
-                        }
-                      />
+                      <FaHeart className="cursor-pointer hover:text-red-500" onClick={() => router.push("/wishlist")} />
+                      <FaShoppingCart className="cursor-pointer hover:text-[#512da8]" onClick={() => alert(`Added ${voucher.title} to cart`)} />
                     </div>
                   </div>
                 </div>

@@ -9,7 +9,8 @@ import { FaBasketballBall, FaUtensils, FaFilm } from "react-icons/fa";
 import { getUser } from "./action";
 
 export default function CartPage() {
-  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
+  // ✅ Single user state with totalpoints
+  const [user, setUser] = useState<{ id: string; email?: string; totalpoints?: number } | null>(null);
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -17,7 +18,7 @@ export default function CartPage() {
   // ✅ Fetch user and cart
   useEffect(() => {
     const loadUserAndCart = async () => {
-      const userData = await getUser();
+      const userData = await getUser(); // getUser must return totalpoints
       if (!userData) {
         router.push("/auth");
         return;
@@ -37,6 +38,8 @@ export default function CartPage() {
 
     loadUserAndCart();
   }, [router]);
+
+
 
   // ✅ Update quantity (frontend only)
   const updateQuantity = (cartId: number, change: number) => {
@@ -74,27 +77,20 @@ export default function CartPage() {
 
   // ✅ Sidebar category navigation (redirect to HomePage with category param)
   const goToCategory = (category: string) => {
-    if (category === "All") {
-      router.push("/home"); // show all vouchers
-    } else {
-      router.push(`/home?category=${category}`);
-    }
+    if (category === "All") router.push("/home");
+    else router.push(`/home?category=${category}`);
   };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* ✅ Navbar */}
-      <Navbar />
+      {/* Navbar with totalpoints */}
+      <Navbar user={user} />
 
-
-
-      {/* ✅ Page Layout */}
+      {/* Page Layout */}
       <div className="flex flex-1 min-h-screen">
         {/* Sidebar */}
         <aside className="w-40 h-full border-r border-gray-200 flex flex-col pt-6">
-          <h2 className="px-4 text-lg font-bold text-[#512da8] mb-4">
-            Categories
-          </h2>
+          <h2 className="px-4 text-lg font-bold text-[#512da8] mb-4">Categories</h2>
           <nav className="flex flex-col space-y-2">
             {["All", "Sport", "Food", "Entertainment"].map((cat) => (
               <button
@@ -111,12 +107,11 @@ export default function CartPage() {
           </nav>
         </aside>
 
-        {/* ✅ Main Content */}
+        {/* Main Content */}
         <main className="flex-1 p-6 flex gap-6">
           {/* Left: Cart items */}
           <div className="flex-1">
             <h2 className="text-xl font-semibold mb-4">Your Cart</h2>
-
             <div className="bg-white p-4 rounded-lg shadow">
               {cartItems.length === 0 && <p>Your cart is empty</p>}
 
@@ -144,12 +139,8 @@ export default function CartPage() {
                   {/* Voucher info */}
                   <div className="flex-1 ml-4">
                     <h3 className="font-semibold">{item.voucher.title}</h3>
-                    <p className="text-gray-500 text-sm">
-                      {item.voucher.description}
-                    </p>
-                    <p className="text-gray-600 text-sm">
-                      Redeem for {item.voucher.points} points
-                    </p>
+                    <p className="text-gray-500 text-sm">{item.voucher.description}</p>
+                    <p className="text-gray-600 text-sm">Redeem for {item.voucher.points} points</p>
                     <p className="text-gray-800 text-sm font-medium mt-1">
                       Total points: {item.quantity * item.voucher.points}
                     </p>
@@ -184,10 +175,10 @@ export default function CartPage() {
             <p>Quantity: {cartItems.reduce((acc, i) => acc + i.quantity, 0)}</p>
             <p className="mt-2">
               Total points to be redeemed:{" "}
-              {cartItems.reduce(
-                (acc, i) => acc + i.quantity * i.voucher.points,
-                0
-              )}
+              {cartItems.reduce((acc, i) => acc + i.quantity * i.voucher.points, 0)}
+            </p>
+            <p className="mt-2">
+              Your total points: {user.totalpoints}
             </p>
             <Button className="mt-4 w-full bg-[#512da8] text-white">
               Checkout

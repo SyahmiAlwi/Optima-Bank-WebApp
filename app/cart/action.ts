@@ -2,15 +2,15 @@
 
 import { supabaseBrowser } from "@/lib/supabase/client";
 
-// Fetch current logged-in user
-export const getUser = async () => {
-  const supabase = supabaseBrowser();
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error) {
-    console.error("Error fetching user:", error);
-  }
-  return user;
-};
+// // Fetch current logged-in user
+// export const getUser = async () => {
+//   const supabase = supabaseBrowser();
+//   const { data: { user }, error } = await supabase.auth.getUser();
+//   if (error) {
+//     console.error("Error fetching user:", error);
+//   }
+//   return user;
+// };
 
 // Fetch all vouchers
 export const fetchVouchers = async () => {
@@ -22,6 +22,20 @@ export const fetchVouchers = async () => {
   }
   return data || [];
 };
+
+export async function getUser() {
+  const { data: user, error } = await supabaseBrowser()
+    .from("profiles")
+    .select("id, email, totalpoints")
+    .single();
+
+  if (error) {
+    console.error("Error fetching user:", error);
+    return null;
+  }
+  return user; // Must include totalpoints
+}
+
 
 // Sign out user
 export const signOutUser = async () => {
