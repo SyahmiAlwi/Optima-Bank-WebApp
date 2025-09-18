@@ -6,7 +6,8 @@ import { FaUserCircle } from "react-icons/fa";
 import { GiTwoCoins } from "react-icons/gi";
 import { signOutUser } from "@/app/home/action";
 
-export function Navbar() {
+// Accept "user" as a prop!
+export function Navbar({ user }: { user?: { totalpoints?: number } }) {
   const [profileOpen, setProfileOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
@@ -61,7 +62,9 @@ export function Navbar() {
         {/* Coins */}
         <div className="flex items-center space-x-1 text-white">
           <GiTwoCoins className="text-yellow-500 text-xl" />
-          <span className="font-semibold">1200</span>
+          <span className="font-semibold">
+            {user?.totalpoints ?? 0}
+          </span>
         </div>
 
         {/* Profile Dropdown */}
