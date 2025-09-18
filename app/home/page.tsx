@@ -3,17 +3,14 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { supabaseBrowser } from "@/lib/supabase/client";
 import {
-  FaUserCircle,
   FaHeart,
   FaShoppingCart,
   FaBasketballBall,
   FaUtensils,
   FaFilm,
 } from "react-icons/fa";
-import { GiTwoCoins } from "react-icons/gi";
-import { getUser, fetchVouchers, signOutUser } from "./action";
+import { getUser, fetchVouchers } from "./action";
 
 export default function HomePage() {
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
@@ -22,7 +19,6 @@ export default function HomePage() {
   const categoryFromQuery = searchParams.get("category") || "All";
   const [activeCategory, setActiveCategory] = useState(categoryFromQuery);
   const [vouchers, setVouchers] = useState<any[]>([]);
-  const [profileOpen, setProfileOpen] = useState(false);
   const router = useRouter();
 
   const supabase = supabaseBrowser();
@@ -32,7 +28,7 @@ export default function HomePage() {
     if (categoryFromQuery !== activeCategory) setActiveCategory(categoryFromQuery);
   }, [categoryFromQuery]);
 
-  // Fetch user
+  // ✅ Fetch user
   useEffect(() => {
     const loadUser = async () => {
       const userData = await getUser();
@@ -46,7 +42,7 @@ export default function HomePage() {
     loadUser();
   }, [router]);
 
-  // Fetch vouchers
+  // ✅ Fetch vouchers
   useEffect(() => {
     const loadVouchers = async () => {
       const data = await fetchVouchers();
@@ -116,6 +112,7 @@ export default function HomePage() {
 
   if (!user) return null;
 
+  // Filter vouchers
   const filteredVouchers =
     activeCategory === "All"
       ? vouchers
@@ -134,23 +131,19 @@ export default function HomePage() {
         <nav className="flex flex-col space-y-4">
           {["All", "Sport", "Food", "Entertainment"].map((cat) => (
             <button
-  key={cat}
-  onClick={() => {
-    setActiveCategory(cat);
-    router.push(`/home?category=${cat}`); // ✅ update URL
-  }}
-  className={`flex items-center px-4 py-2 rounded-r-full ${
-    activeCategory === cat
-      ? "bg-[#512da8] text-white"
-      : "text-gray-700 hover:bg-gray-100"
-  }`}
->
-  {cat === "Sport" && <FaBasketballBall className="mr-2" />}
-  {cat === "Food" && <FaUtensils className="mr-2" />}
-  {cat === "Entertainment" && <FaFilm className="mr-2" />}
-  {cat === "All" ? "All Vouchers" : cat}
-</button>
-
+              key={cat}
+              onClick={() => setActiveCategory(cat)}
+              className={`flex items-center px-4 py-2 rounded-r-full ${
+                activeCategory === cat
+                  ? "bg-[#512da8] text-white"
+                  : "text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              {cat === "Sport" && <FaBasketballBall className="mr-2" />}
+              {cat === "Food" && <FaUtensils className="mr-2" />}
+              {cat === "Entertainment" && <FaFilm className="mr-2" />}
+              {cat === "All" ? "All Vouchers" : cat}
+            </button>
           ))}
         </nav>
       </aside>
@@ -160,6 +153,7 @@ export default function HomePage() {
         {/* Header */}
         <header className="flex items-center justify-between bg-white px-6 py-4 shadow-md relative">
           <div className="text-2xl font-bold text-[#512da8]">Optima Bank</div>
+
           <div className="flex-1 px-6">
             <input
               type="text"
@@ -218,14 +212,21 @@ export default function HomePage() {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {filteredVouchers.length > 0 ? (
               filteredVouchers.map((voucher, index) => (
-                <div key={index} className="bg-white rounded-lg shadow-md p-4 ">
+                <div
+                  key={index}
+                  className="bg-white rounded-lg shadow-md p-4"
+                >
                   <img
                     src={`/images/${voucher.image || "default.jpg"}`}
                     alt={voucher.title}
                     className="w-full h-32 object-cover rounded-md mb-3 cursor-pointer"
-                    onClick={() => router.push(`/voucherdetails?id=${voucher.id}`)}
+                    onClick={() =>
+                      router.push(`/voucherdetails?id=${voucher.id}`)
+                    }
                   />
-                  <h3 className="font-semibold text-gray-800 mb-2">{voucher.title}</h3>
+                  <h3 className="font-semibold text-gray-800 mb-2">
+                    {voucher.title}
+                  </h3>
                   <div className="flex justify-between items-center mt-3">
                     <Button
                       className="bg-[#512da8] text-white px-3 py-1 text-sm"
@@ -240,7 +241,7 @@ export default function HomePage() {
                       />
                       <FaShoppingCart
                         className="cursor-pointer hover:text-[#512da8]"
-                        onClick={() => addToCart(voucher.id)}
+                        onClick={() => alert(`Added ${voucher.title} to cart`)}
                       />
                     </div>
                   </div>
