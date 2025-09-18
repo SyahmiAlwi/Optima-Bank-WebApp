@@ -10,7 +10,9 @@ export function Navbar() {
   const [profileOpen, setProfileOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
-  const isHome = pathname === "/home";
+
+  // ✅ Helper to check active link
+  const isActive = (path: string) => pathname === path;
 
   return (
     <nav className="w-full bg-[#512da8] shadow-md px-6 py-4 flex items-center justify-between">
@@ -26,31 +28,31 @@ export function Navbar() {
       <div className="flex space-x-6 font-medium text-white">
         <button
           onClick={() => router.push("/home")}
-          className={`${isHome ? "text-yellow-300 font-bold" : "text-white"} hover:text-yellow-300`}
+          className={`${isActive("/home") ? "text-yellow-300 font-bold" : "text-white"} hover:text-yellow-300`}
         >
           Home
         </button>
         <button
           onClick={() => router.push("/rewards")}
-          className="hover:text-yellow-300"
+          className={`${isActive("/rewards") ? "text-yellow-300 font-bold" : "text-white"} hover:text-yellow-300`}
         >
           Rewards
         </button>
         <button
           onClick={() => router.push("/vouchers")}
-          className="hover:text-yellow-300"
+          className={`${isActive("/vouchers") ? "text-yellow-300 font-bold" : "text-white"} hover:text-yellow-300`}
         >
           Voucher
         </button>
         <button
           onClick={() => router.push("/wishlist")}
-          className="hover:text-yellow-300"
+          className={`${isActive("/wishlist") ? "text-yellow-300 font-bold" : "text-white"} hover:text-yellow-300`}
         >
           Wishlist
         </button>
         <button
           onClick={() => router.push("/cart")}
-          className="hover:text-yellow-300"
+          className={`${isActive("/cart") ? "text-yellow-300 font-bold" : "text-white"} hover:text-yellow-300`}
         >
           Cart
         </button>
