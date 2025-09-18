@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/ui/navbar";
-import { supabaseBrowser } from "@/lib/supabase/client";
+import { GiTwoCoins } from "react-icons/gi";
 import {
   FaHeart,
   FaShoppingCart,
@@ -15,12 +15,11 @@ import {
 import { getUser, fetchVouchers } from "./action";
 
 export default function HomePage() {
-  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
+  const [user, setUser] = useState<{ email?: string; totalpoints?: number } | null>(null);
   const [loading, setLoading] = useState(true);
-  const searchParams = useSearchParams();
-  const categoryFromQuery = searchParams.get("category") || "All";
-  const [activeCategory, setActiveCategory] = useState(categoryFromQuery);
+  const [activeCategory, setActiveCategory] = useState("All");
   const [vouchers, setVouchers] = useState<any[]>([]);
+  const [promoIndex, setPromoIndex] = useState(0); // For carousel
   const router = useRouter();
 
   // ✅ Fetch user
@@ -56,7 +55,13 @@ export default function HomePage() {
 
   if (!user) return null;
 
-  // ✅ Filter vouchers
+  // ✅ Get vouchers user can redeem based on totalpoints
+  const userPoints = user.totalpoints ?? 0;
+  const redeemableVouchers = vouchers.filter(voucher => voucher.points <= userPoints);
+  // Sort descending, display all vouchers user can redeem in carousel
+  const promoVouchers = redeemableVouchers.sort((a, b) => b.points - a.points);
+
+  // ✅ Filter vouchers by category
   const filteredVouchers =
     activeCategory === "All"
       ? vouchers
@@ -67,21 +72,90 @@ export default function HomePage() {
           return true;
         });
 
+  // Handle carousel boundary
+  const handlePrev = () => setPromoIndex((prev) => Math.max(prev - 1, 0));
+  const handleNext = () => setPromoIndex((prev) => Math.min(prev + 1, promoVouchers.length - 1));
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* ✅ Navbar (already has logo, links, coins, profile) */}
-      <Navbar />
+      <Navbar user={user} />
 
-{/* ✅ Search bar placed below navbar */}
-<div className="w-full bg-gray-50 flex justify-center py-6">
-  <div className="w-full max-w-2xl px-1">
-    <input
-      type="text"
-      placeholder="Search vouchers..."
-      className="w-full px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#512da8]"
-    />
+      {/* ✅ Promo Carousel Section */}
+{promoVouchers.length > 0 && (
+  <div className="w-full flex flex-col items-center py-6">
+    <div
+      className="relative bg-gradient-to-r from-yellow-200 to-purple-200 rounded-xl shadow-lg flex items-center mb-6"
+      style={{
+        width: "700px",
+        minHeight: "190px",
+        padding: "24px 32px",
+        boxSizing: "border-box",
+      }}
+    >
+      {/* Left Button */}
+      <button
+        onClick={handlePrev}
+        disabled={promoIndex === 0}
+        className="absolute left-[-22px] top-1/2 transform -translate-y-1/2 text-2xl bg-white rounded-full shadow border border-gray-200 hover:bg-yellow-100 disabled:opacity-50 w-11 h-11 flex items-center justify-center"
+        aria-label="Previous voucher"
+      >
+        &#8592;
+      </button>
+
+      {/* Voucher Card Content */}
+      <div className="flex items-center gap-6 w-full">
+        {/* Image Container for full-width, rounded image */}
+        <div className="w-60 h-28 rounded-2xl overflow-hidden flex-shrink-0 bg-white">
+          <img
+            src={`/images/${promoVouchers[promoIndex].image || "default.jpg"}`}
+            alt={promoVouchers[promoIndex].title}
+            className="w-full h-full object-cover"
+          />
+        </div>
+        {/* Info */}
+<div className="flex flex-col items-center justify-center flex-1 ml-2 text-center">
+  <h3 className="text-xl font-bold text-[#512da8] mb-1">{promoVouchers[promoIndex].title}</h3>
+  <div className="flex items-center justify-center text-yellow-500 font-semibold text-lg mb-3">
+    <GiTwoCoins className="mr-2" />
+    {promoVouchers[promoIndex].points} points
   </div>
+  <Button
+    className="bg-yellow-400 text-[#512da8] font-bold px-4 py-2 text-base shadow-lg rounded-lg w-40"
+    onClick={() => router.push(`/voucherdetails?id=${promoVouchers[promoIndex].id}`)}
+  >
+    Redeem Now
+  </Button>
 </div>
+      </div>
+
+      {/* Right Button */}
+      <button
+        onClick={handleNext}
+        disabled={promoIndex === promoVouchers.length - 1}
+        className="absolute right-[-22px] top-1/2 transform -translate-y-1/2 text-2xl bg-white rounded-full shadow border border-gray-200 hover:bg-yellow-100 disabled:opacity-50 w-11 h-11 flex items-center justify-center"
+        aria-label="Next voucher"
+      >
+        &#8594;
+      </button>
+    </div>
+<div className="flex items-center justify-center">
+  <span className="text-base font-bold text-[#512da8] drop-shadow">
+    {promoIndex + 1} / {promoVouchers.length} vouchers you can redeem
+  </span>
+</div>
+  </div>
+)}
+      {/* ✅ Search bar placed below promo section */}
+      <div className="w-full bg-gray-50 flex justify-center py-1">
+        <div className="w-full max-w-2xl px-1">
+          <input
+            type="text"
+            placeholder="Search vouchers..."
+            className="w-full px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#512da8]"
+          />
+        </div>
+      </div>
 
       {/* ✅ Page Layout */}
       <div className="flex flex-1 min-h-screen">
@@ -130,9 +204,15 @@ export default function HomePage() {
                       router.push(`/voucherdetails?id=${voucher.id}`)
                     }
                   />
-                  <h3 className="font-semibold text-gray-800 mb-2">
-                    {voucher.title}
-                  </h3>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold text-gray-800">
+                      {voucher.title}
+                    </h3>
+                    <span className="flex items-center text-yellow-400 font-semibold text-sm">
+                      <GiTwoCoins className="mr-1 text-yellow-400 text-base" />
+                      {voucher.points}
+                    </span>
+                  </div>
                   <div className="flex justify-between items-center mt-3">
                     <Button
                       className="bg-[#512da8] text-white px-3 py-1 text-sm"
