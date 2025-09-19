@@ -11,7 +11,7 @@ interface ShaderBackgroundProps {
 
 export default function ShaderBackground({ children }: ShaderBackgroundProps) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const [_isActive, setIsActive] = useState(false)
+  const [, setIsActive] = useState(false)
 
   useEffect(() => {
     const handleMouseEnter = () => setIsActive(true)

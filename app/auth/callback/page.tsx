@@ -28,7 +28,7 @@ export default function AuthCallbackPage() {
           const expires_in_str = params.get("expires_in") ?? undefined;
 
           if (access_token && refresh_token) {
-            const _expires_in = expires_in_str ? parseInt(expires_in_str, 10) : undefined;
+            // expires_in is available but not used in this implementation
             await supabase.auth.setSession({
               access_token,
               refresh_token,

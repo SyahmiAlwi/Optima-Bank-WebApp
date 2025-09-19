@@ -39,12 +39,12 @@ export default function ProfileForm({ userId, initial }: Props) {
     try {
       // Update email in Supabase Auth
       if (form.email && form.email !== (initial.email ?? '')) {
-        const { error } = await supabaseBrowser.auth.updateUser({ email: form.email })
+        const { error } = await supabaseBrowser().auth.updateUser({ email: form.email })
         if (error) throw error
       }
 
       // Upsert profile row in "profiles" table
-      const { error: upsertErr } = await supabaseBrowser
+      const { error: upsertErr } = await supabaseBrowser()
         .from('profiles')
         .upsert(
           {
@@ -79,20 +79,20 @@ export default function ProfileForm({ userId, initial }: Props) {
       const path = `${userId}/${fileName}`
 
       // Upload to "avatars" bucket
-      const { error: uploadErr } = await supabaseBrowser
+      const { error: uploadErr } = await supabaseBrowser()
         .storage
         .from('avatars')
         .upload(path, file, { upsert: true })
       if (uploadErr) throw uploadErr
 
       // Get public URL
-      const { data } = supabaseBrowser.storage.from('avatars').getPublicUrl(path)
+      const { data } = supabaseBrowser().storage.from('avatars').getPublicUrl(path)
       const publicUrl = data.publicUrl
 
       setAvatarUrl(publicUrl)
 
       // Save new avatar_url in "profiles" table
-      const { error: updErr } = await supabaseBrowser
+      const { error: updErr } = await supabaseBrowser()
         .from('profiles')
         .update({ avatar_url: publicUrl, updated_at: new Date().toISOString() })
         .eq('id', userId)
