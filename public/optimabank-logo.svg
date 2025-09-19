@@ -1,0 +1,9 @@
+<svg width="84" height="84" viewBox="0 0 84 84" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="42" cy="42" r="42" fill="#121212"/>
+  <circle cx="42" cy="42" r="42" fill="#D00000" mask="url(#half)"/>
+  <mask id="half">
+    <rect width="42" height="84" fill="white"/>
+    <polygon points="42,20 42,64 70,42" fill="white"/>
+  </mask>
+  <polygon points="42,20 42,64 70,42" fill="white"/>
+</svg>

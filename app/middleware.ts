@@ -39,6 +39,11 @@ export async function middleware(req: NextRequest) {
     }
   }
 
+  // Allow OAuth callback to pass through without redirects
+  if (req.nextUrl.pathname === '/auth/callback') {
+    return response
+  }
+
   // Redirect authenticated users away from auth page
   if (req.nextUrl.pathname.startsWith('/auth')) {
     if (session) {
