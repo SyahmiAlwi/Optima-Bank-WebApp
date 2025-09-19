@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button";
 import { FaHeart, FaShoppingCart } from "react-icons/fa";
 import { GiTwoCoins } from "react-icons/gi";
 import { Navbar } from "@/components/ui/navbar"; // Import Navbar
-import { getUser, fetchVouchers } from "./action";
+import { getUser, fetchVouchers, addToCart } from "./action";
 
 export default function VoucherDetailsPage() {
-    const [user, setUser] = useState<{ email?: string; totalpoints?: number } | null>(null);
+  const [user, setUser] = useState<{ id: string; email?: string; totalpoints?: number } | null>(null);
   const [voucher, setVoucher] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const searchParams = useSearchParams();
@@ -151,9 +151,26 @@ export default function VoucherDetailsPage() {
                 onClick={() => alert(`Added ${voucher.title} to wishlist`)}
               />
               <FaShoppingCart
-                className="cursor-pointer hover:text-[#512da8]"
-                onClick={() => alert(`Added ${voucher.title} to cart`)}
-              />
+            className="cursor-pointer hover:text-[#512da8]"
+            onClick={async () => {
+              if (!user) return router.push("/auth");
+
+              try {
+                // Call the action to add to cart
+                const result = await addToCart(user.id, voucher.id);
+
+                if (result.success) {
+                  alert(`${voucher.title} added to cart`);
+                } else {
+                  alert(`Failed to add ${voucher.title} to cart`);
+                }
+              } catch (error) {
+                console.error("Error adding to cart:", error);
+                alert("Something went wrong while adding to cart");
+              }
+            }}
+          />
+
             </div>
           </div>
         </div>

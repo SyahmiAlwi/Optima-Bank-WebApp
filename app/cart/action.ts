@@ -37,6 +37,8 @@ export async function getUser() {
 }
 
 
+
+
 // Sign out user
 export const signOutUser = async () => {
   const supabase = supabaseBrowser();

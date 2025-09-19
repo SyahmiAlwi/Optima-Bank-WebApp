@@ -40,6 +40,32 @@ export const fetchVouchers = async () => {
   return data || [];
 };
 
+
+// Add voucher to user's cart
+export async function addToCart(userId: string, voucherId: number) {
+  const supabase = supabaseBrowser();
+
+  console.log("Attempting to add to cart:", { userId, voucherId });
+
+  try {
+    const { data, error } = await supabase
+      .from("cart")
+      .insert([{ user_id: userId, voucher_id: voucherId }]);
+
+    if (error) {
+      console.error("Supabase insert error:", error.message, error.details);
+      return { success: false, error };
+    }
+
+    console.log("Added to cart:", data);
+    return { success: true, data };
+  } catch (err) {
+    console.error("Unexpected error adding to cart:", err);
+    return { success: false, error: err };
+  }
+}
+
+
 // Sign out user
 export const signOutUser = async () => {
   const supabase = supabaseBrowser();

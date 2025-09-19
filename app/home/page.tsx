@@ -13,14 +13,18 @@ import {
   FaFilm,
 } from "react-icons/fa";
 import { getUser, fetchVouchers } from "./action";
+import { addToCart } from "./action"; // make sure this exists
+
 
 export default function HomePage() {
-  const [user, setUser] = useState<{ email?: string; totalpoints?: number } | null>(null);
+const [user, setUser] = useState<{ id: string; email?: string; totalpoints?: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState("All");
   const [vouchers, setVouchers] = useState<any[]>([]);
   const [promoIndex, setPromoIndex] = useState(0);
   const [searchTerm, setSearchTerm] = useState(""); // ✅ search state
+  const [cart, setCart] = useState<{ [voucherId: number]: number }>({});
+
   const router = useRouter();
 
   // Fetch user
@@ -119,7 +123,11 @@ export default function HomePage() {
                 placeholder="Search vouchers..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full max-w-2xl px-4 py-2 border rounded-lg shadow-sm focus:ring-2 focus:ring-[#512da8] focus:outline-none"
+                 className="w-full px-5 py-3 border-2 border-[#512da8] bg-white rounded-lg shadow focus:outline-none focus:ring-1 focus:ring-[#512da8] text-lg font-normal text-[#512da8] placeholder:text-[#7e57c2]"
+      style={{
+        transition: "box-shadow .2s",
+        boxShadow: "0 4px 6px rgba(81, 45, 168, 0.1)",
+      }}
               />
             </div>
 
@@ -208,8 +216,27 @@ export default function HomePage() {
                     </Button>
                     <div className="flex space-x-3 text-gray-600 text-lg">
                       <FaHeart className="cursor-pointer hover:text-red-500" onClick={() => router.push("/wishlist")} />
-                      <FaShoppingCart className="cursor-pointer hover:text-[#512da8]" onClick={() => alert(`Added ${voucher.title} to cart`)} />
-                    </div>
+<FaShoppingCart
+  className="cursor-pointer hover:text-[#512da8]"
+  onClick={async () => {
+    if (!user) return router.push("/auth");
+
+    // Call Supabase to add voucher
+    const result = await addToCart(user.id, voucher.id);
+
+    if (result.success) {
+      // Update frontend cart quantity
+      setCart((prev) => {
+        const currentQty = prev[voucher.id] || 0;
+        return { ...prev, [voucher.id]: currentQty + 1 };
+      });
+      alert(`Added ${voucher.title} to cart. Quantity: ${cart[voucher.id] ? cart[voucher.id] + 1 : 1}`);
+    } else {
+      alert("Failed to add to cart");
+      console.error(result.error);
+    }
+  }}
+/>                    </div>
                   </div>
                 </div>
               ))

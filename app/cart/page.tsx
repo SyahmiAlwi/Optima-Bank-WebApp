@@ -41,37 +41,84 @@ export default function CartPage() {
 
 
 
-  // ✅ Update quantity (frontend only)
-  const updateQuantity = (cartId: number, change: number) => {
+  // // ✅ Update quantity (frontend only)
+  // const updateQuantity = (cartId: number, change: number) => {
+  //   setCartItems((prev) =>
+  //     prev
+  //       .map((item) => {
+  //         if (item.id === cartId) {
+  //           const newQty = item.quantity + change;
+  //           if (newQty < 1) return null;
+  //           return { ...item, quantity: newQty };
+  //         }
+  //         return item;
+  //       })
+  //       .filter(Boolean)
+  //   );
+  // };
+
+  // // ✅ Remove item (frontend only)
+  // const removeItem = (cartId: number) => {
+  //   setCartItems((prev) => prev.filter((item) => item.id !== cartId));
+  // };
+
+  // if (loading) {
+  //   return (
+  //     <div className="h-svh flex items-center justify-center bg-gradient-to-r from-gray-200 to-indigo-100">
+  //       <div className="text-center">
+  //         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#512da8] mx-auto mb-4"></div>
+  //         <p className="text-gray-600">Loading...</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
+
+  const updateQuantity = async (cartId: number, change: number) => {
+  const item = cartItems.find((i) => i.id === cartId);
+  if (!item) return;
+
+  const newQty = item.quantity + change;
+  if (newQty < 1) return removeItem(cartId); // delete if quantity < 1
+
+  try {
+    const { error } = await supabaseBrowser()
+      .from("cart")
+      .update({ quantity: newQty })
+      .eq("id", cartId);
+
+    if (error) {
+      console.error("Error updating cart:", error);
+      return;
+    }
+
     setCartItems((prev) =>
-      prev
-        .map((item) => {
-          if (item.id === cartId) {
-            const newQty = item.quantity + change;
-            if (newQty < 1) return null;
-            return { ...item, quantity: newQty };
-          }
-          return item;
-        })
-        .filter(Boolean)
+      prev.map((i) => (i.id === cartId ? { ...i, quantity: newQty } : i))
     );
-  };
-
-  // ✅ Remove item (frontend only)
-  const removeItem = (cartId: number) => {
-    setCartItems((prev) => prev.filter((item) => item.id !== cartId));
-  };
-
-  if (loading) {
-    return (
-      <div className="h-svh flex items-center justify-center bg-gradient-to-r from-gray-200 to-indigo-100">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#512da8] mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
+  } catch (err) {
+    console.error("Unexpected error:", err);
   }
+};
+
+
+  const removeItem = async (cartId: number) => {
+  try {
+    const { error } = await supabaseBrowser()
+      .from("cart")
+      .delete()
+      .eq("id", cartId);
+
+    if (error) {
+      console.error("Error removing from cart:", error);
+      return;
+    }
+
+    // Update frontend state
+    setCartItems((prev) => prev.filter((item) => item.id !== cartId));
+  } catch (err) {
+    console.error("Unexpected error:", err);
+  }
+};
+
 
   if (!user) return null;
 
@@ -140,7 +187,7 @@ export default function CartPage() {
                   <div className="flex-1 ml-4">
                     <h3 className="font-semibold">{item.voucher.title}</h3>
                     <p className="text-gray-500 text-sm">{item.voucher.description}</p>
-                    <p className="text-gray-600 text-sm">Redeem for {item.voucher.points} points</p>
+                    <p className="text-[#512da8] text-sm">Redeem for {item.voucher.points} points</p>
                     <p className="text-gray-800 text-sm font-medium mt-1">
                       Total points: {item.quantity * item.voucher.points}
                     </p>
