@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { PulsingBorder } from "@paper-design/shaders-react";
+import Image from "next/image";
 
 export default function Security() {
 	return (
@@ -133,9 +134,11 @@ export default function Security() {
 								}}
 							/>
 						</div>
-						<img 
+						<Image 
 							src="/logo-bg-removed.png" 
 							alt="Optima Bank" 
+							width={128}
+							height={128}
 							className="relative h-32 w-auto z-10" 
 						/>
 					</div>

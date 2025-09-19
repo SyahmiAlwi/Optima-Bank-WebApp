@@ -33,11 +33,11 @@ export const Motion = {
 			if (!fired && window.scrollY > px) {
 				fired = true;
 				fn();
-				window.removeEventListener("scroll", handler as any);
-			}
-		};
-		window.addEventListener("scroll", handler, { passive: true } as any);
-		return () => window.removeEventListener("scroll", handler as any);
+		window.removeEventListener("scroll", handler);
+	}
+};
+window.addEventListener("scroll", handler, { passive: true });
+return () => window.removeEventListener("scroll", handler);
 	},
 	playOrFade(el: Element, play: Play) {
 		if (this.reduced) {

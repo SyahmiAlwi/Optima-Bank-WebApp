@@ -60,8 +60,8 @@ export default function ProfileForm({ userId, initial }: Props) {
       if (upsertErr) throw upsertErr
 
       setMsg('✅ Profile saved successfully!')
-    } catch (err: any) {
-      setMsg(`❌ ${err.message}`)
+    } catch (err: unknown) {
+      setMsg(`❌ ${err instanceof Error ? err.message : 'An error occurred'}`)
     } finally {
       setSaving(false)
     }
@@ -99,8 +99,8 @@ export default function ProfileForm({ userId, initial }: Props) {
       if (updErr) throw updErr
 
       setMsg('✅ Avatar updated!')
-    } catch (err: any) {
-      setMsg(`❌ ${err.message}`)
+    } catch (err: unknown) {
+      setMsg(`❌ ${err instanceof Error ? err.message : 'An error occurred'}`)
     } finally {
       setUploading(false)
     }

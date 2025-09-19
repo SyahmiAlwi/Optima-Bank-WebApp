@@ -94,7 +94,7 @@ export default function SocialProof() {
 								</svg>
 							))}
 						</div>
-						<blockquote className="text-neutral-200 text-lg leading-relaxed mb-4">"Optima Bank has transformed how I manage my finances. The app is intuitive and incredibly fast!"</blockquote>
+						<blockquote className="text-neutral-200 text-lg leading-relaxed mb-4">&ldquo;Optima Bank has transformed how I manage my finances. The app is intuitive and incredibly fast!&rdquo;</blockquote>
 						<figcaption className="flex items-center gap-3">
 							<div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center text-white font-bold">S</div>
 							<div>
@@ -151,7 +151,7 @@ export default function SocialProof() {
 								</svg>
 							))}
 						</div>
-						<blockquote className="text-neutral-200 text-lg leading-relaxed mb-4">"The security features give me peace of mind. Best banking app I've ever used!"</blockquote>
+						<blockquote className="text-neutral-200 text-lg leading-relaxed mb-4">&ldquo;The security features give me peace of mind. Best banking app I&rsquo;ve ever used!&rdquo;</blockquote>
 						<figcaption className="flex items-center gap-3">
 							<div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white font-bold">M</div>
 							<div>

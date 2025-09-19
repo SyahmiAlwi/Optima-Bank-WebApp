@@ -1,7 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
-
 export default function Nav() {
     return (
         <header className="relative z-20 flex items-center justify-center p-6">
