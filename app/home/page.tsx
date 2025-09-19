@@ -19,7 +19,8 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState("All");
   const [vouchers, setVouchers] = useState<any[]>([]);
-  const [promoIndex, setPromoIndex] = useState(0); // For carousel
+  const [promoIndex, setPromoIndex] = useState(0);
+  const [searchTerm, setSearchTerm] = useState(""); // ✅ search state
   const router = useRouter();
 
   // Fetch user
@@ -69,13 +70,18 @@ export default function HomePage() {
           return true;
         });
 
+  // ✅ Apply search filter
+  const searchedVouchers = filteredVouchers.filter((voucher) =>
+    voucher.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   const handlePrev = () => setPromoIndex((prev) => Math.max(prev - 1, 0));
   const handleNext = () => setPromoIndex((prev) => Math.min(prev + 1, promoVouchers.length - 1));
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Navbar */}
-      <Navbar user={user} />
+      <Navbar user={user ?? undefined} />
 
       {/* Page Layout: Sidebar + Main */}
       <div className="flex flex-1 min-h-screen">
@@ -106,8 +112,20 @@ export default function HomePage() {
         <main className="flex-1 p-6">
           <h2 className="text-xl font-semibold mb-4">{activeCategory} Vouchers</h2>
 
-          {/* Carousel below the title */}
-          {activeCategory === "All" && promoVouchers.length > 0 && (
+          {/* Search Bar */}
+            <div className="mb-6 flex justify-center">
+              <input
+                type="text"
+                placeholder="Search vouchers..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full max-w-2xl px-4 py-2 border rounded-lg shadow-sm focus:ring-2 focus:ring-[#512da8] focus:outline-none"
+              />
+            </div>
+
+
+          {/* Carousel */}
+          {activeCategory === "All" && promoVouchers.length > 0 && searchTerm === "" && (
             <div className="w-full flex flex-col items-center py-6 mb-6">
               <div
                 className="relative bg-gradient-to-r from-yellow-200 to-purple-200 rounded-xl shadow-lg flex items-center mb-6"
@@ -165,8 +183,8 @@ export default function HomePage() {
 
           {/* Voucher grid */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {filteredVouchers.length > 0 ? (
-              filteredVouchers.map((voucher, index) => (
+            {searchedVouchers.length > 0 ? (
+              searchedVouchers.map((voucher, index) => (
                 <div key={index} className="bg-white rounded-lg shadow-md p-4">
                   <img
                     src={`/images/${voucher.image || "default.jpg"}`}
@@ -196,7 +214,7 @@ export default function HomePage() {
                 </div>
               ))
             ) : (
-              <p className="text-gray-500">No vouchers available</p>
+              <p className="text-gray-500">No vouchers found</p>
             )}
           </div>
         </main>

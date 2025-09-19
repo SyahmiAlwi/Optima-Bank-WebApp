@@ -4,16 +4,40 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { FaHeart, FaShoppingCart, FaUserCircle } from "react-icons/fa";
+import { FaHeart, FaShoppingCart } from "react-icons/fa";
 import { GiTwoCoins } from "react-icons/gi";
+import { Navbar } from "@/components/ui/navbar"; // Import Navbar
+import { getUser, fetchVouchers } from "./action";
 
 export default function VoucherDetailsPage() {
+    const [user, setUser] = useState<{ email?: string; totalpoints?: number } | null>(null);
   const [voucher, setVoucher] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const searchParams = useSearchParams();
   const router = useRouter();
   const supabase = supabaseBrowser();
 
+  // Fetch user
+    useEffect(() => {
+      const loadUser = async () => {
+        const userData = await getUser();
+        setUser(userData);
+        setLoading(false);
+        if (!userData) router.push("/auth");
+      };
+      loadUser();
+    }, [router]);
+
+    // Fetch vouchers
+      useEffect(() => {
+        const loadVouchers = async () => {
+          const data = await fetchVouchers();
+          setVoucher(data);
+        };
+        loadVouchers();
+      }, []);
+
+      
   // Get voucher ID from query (?id=)
   const voucherId = searchParams.get("id");
 
@@ -62,91 +86,75 @@ export default function VoucherDetailsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col p-6">
-      {/* Top Bar (Logo + Points + Cart + Profile) */}
-      <div className="w-full flex justify-between items-center mb-6">
-        {/* Top Left: Logo */}
-        <div className="text-2xl font-bold text-[#512da8]">Optima Bank</div>
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      {/* Navbar */}
+      <Navbar user={user ?? undefined} />
 
-        {/* Right: Points + Cart + Profile */}
-        <div className="flex items-center space-x-6 text-gray-700">
-          <div className="flex items-center space-x-1">
-            <GiTwoCoins className="text-yellow-500 text-xl" />
-            <span className="font-semibold">1200</span>
+      {/* Page content */}
+      <div className="flex-1 p-6">
+        {/* Back Button */}
+        <button
+          className="self-start text-[#512da8] mb-4"
+          onClick={() => router.back()}
+        >
+          ← Back
+        </button>
+
+        {/* Voucher Card */}
+        <div className="w-full max-w-3xl bg-white rounded-lg shadow-md p-6 mx-auto">
+          {/* Image */}
+          <img
+            src={`/images/${voucher.image || "default.jpg"}`}
+            alt={voucher.title}
+            className="w-full h-64 object-cover rounded-md mb-4"
+          />
+
+          {/* Title + Category */}
+          <div className="flex justify-between items-center mb-2">
+            <h1 className="text-2xl font-bold text-gray-800">{voucher.title}</h1>
+            <span className="text-sm font-medium text-[#512da8]">
+              {categoryMap[voucher.category_id] || "Other"}
+            </span>
           </div>
-          <FaShoppingCart
-            className="text-2xl cursor-pointer hover:text-[#512da8]"
-            onClick={() => alert("Go to cart")}
-          />
-          <FaUserCircle
-            className="text-3xl cursor-pointer hover:text-[#512da8]"
-            onClick={() => alert("Go to profile")}
-          />
-        </div>
-      </div>
 
-      {/* Back Button */}
-      <button
-        className="self-start text-[#512da8] mb-4"
-        onClick={() => router.back()}
-      >
-        ← Back
-      </button>
+          {/* Points */}
+          <div className="flex items-center space-x-2 text-gray-700 mb-4">
+            <GiTwoCoins className="text-yellow-500" />
+            <p>Redeem for {voucher.points} points</p>
+          </div>
 
-      {/* Voucher Card */}
-      <div className="w-full max-w-3xl bg-white rounded-lg shadow-md p-6 mx-auto">
-        {/* Image */}
-        <img
-          src={`/images/${voucher.image || "default.jpg"}`}
-          alt={voucher.title}
-          className="w-full h-64 object-cover rounded-md mb-4"
-        />
+          {/* Description */}
+          <p className="text-gray-600 mb-4">{voucher.description}</p>
 
-        {/* Title + Category */}
-        <div className="flex justify-between items-center mb-2">
-          <h1 className="text-2xl font-bold text-gray-800">{voucher.title}</h1>
-          <span className="text-sm font-medium text-[#512da8]">
-            {categoryMap[voucher.category_id] || "Other"}
-          </span>
-        </div>
+          {/* Terms & Conditions */}
+          <div className="mt-4 border-t pt-4">
+            <h2 className="text-lg font-semibold text-gray-800 mb-2">
+              Terms & Conditions
+            </h2>
+            <p className="text-sm text-gray-600 whitespace-pre-line">
+              {voucher.terms || "No specific terms available."}
+            </p>
+          </div>
 
-        {/* Points */}
-        <div className="flex items-center space-x-2 text-gray-700 mb-4">
-          <GiTwoCoins className="text-yellow-500" />
-          <p>Redeem for {voucher.points} points</p>
-        </div>
+          {/* Action Buttons */}
+          <div className="mt-6 flex justify-between items-center">
+            <Button
+              className="bg-[#512da8] text-white px-6 py-2 rounded-md"
+              onClick={() => alert(`Redeemed: ${voucher.title}`)}
+            >
+              Redeem
+            </Button>
 
-        {/* Description */}
-        <p className="text-gray-600 mb-4">{voucher.description}</p>
-
-        {/* Terms & Conditions */}
-        <div className="mt-4 border-t pt-4">
-          <h2 className="text-lg font-semibold text-gray-800 mb-2">
-            Terms & Conditions
-          </h2>
-          <p className="text-sm text-gray-600 whitespace-pre-line">
-            {voucher.terms || "No specific terms available."}
-          </p>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="mt-6 flex justify-between items-center">
-          <Button
-            className="bg-[#512da8] text-white px-6 py-2 rounded-md"
-            onClick={() => alert(`Redeemed: ${voucher.title}`)}
-          >
-            Redeem
-          </Button>
-
-          <div className="flex space-x-4 text-gray-600 text-xl">
-            <FaHeart
-              className="cursor-pointer hover:text-red-500"
-              onClick={() => alert(`Added ${voucher.title} to wishlist`)}
-            />
-            <FaShoppingCart
-              className="cursor-pointer hover:text-[#512da8]"
-              onClick={() => alert(`Added ${voucher.title} to cart`)}
-            />
+            <div className="flex space-x-4 text-gray-600 text-xl">
+              <FaHeart
+                className="cursor-pointer hover:text-red-500"
+                onClick={() => alert(`Added ${voucher.title} to wishlist`)}
+              />
+              <FaShoppingCart
+                className="cursor-pointer hover:text-[#512da8]"
+                onClick={() => alert(`Added ${voucher.title} to cart`)}
+              />
+            </div>
           </div>
         </div>
       </div>
