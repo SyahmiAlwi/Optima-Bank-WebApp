@@ -42,7 +42,6 @@ export default function ShaderBackground({ children }: Props) {
         className="absolute inset-0 h-full w-full opacity-60"
         colors={["#000000", "#ffffff", "#8b5cf6", "#000000"]}
         speed={isActive ? 0.35 : 0.2}
-        wireframe="true"
       />
       <div className="relative z-10">
         {children}

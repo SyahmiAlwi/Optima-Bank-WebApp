@@ -25,10 +25,7 @@ export default function AuthCallbackPage() {
           const params = new URLSearchParams(hash.replace(/^#/, ""));
           const access_token = params.get("access_token") ?? undefined;
           const refresh_token = params.get("refresh_token") ?? undefined;
-          const expires_in_str = params.get("expires_in") ?? undefined;
-
           if (access_token && refresh_token) {
-            // expires_in is available but not used in this implementation
             await supabase.auth.setSession({
               access_token,
               refresh_token,
