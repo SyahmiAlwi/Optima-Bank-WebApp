@@ -86,8 +86,8 @@ export const ShimmerButton = React.forwardRef<HTMLButtonElement, ShimmerButtonPr
 
     if (asChild && React.isValidElement(children)) {
       return React.cloneElement(children, {
-        style: { ...shimmerStyles, ...(children.props as any).style },
-        className: cn(shimmerClasses, (children.props as any).className),
+        style: { ...shimmerStyles, ...(children.props as { style?: React.CSSProperties }).style },
+        className: cn(shimmerClasses, (children.props as { className?: string }).className),
         ref,
         ...props,
         children: shimmerContent,
