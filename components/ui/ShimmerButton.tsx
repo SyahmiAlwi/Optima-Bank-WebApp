@@ -85,12 +85,13 @@ export const ShimmerButton = React.forwardRef<HTMLButtonElement, ShimmerButtonPr
     );
 
     if (asChild && React.isValidElement(children)) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return React.cloneElement(children, {
         style: { ...shimmerStyles, ...(children.props as { style?: React.CSSProperties }).style },
         ref,
         ...props,
         children: shimmerContent,
-      } as React.ReactElement);
+      } as any);
     }
 
     return (
