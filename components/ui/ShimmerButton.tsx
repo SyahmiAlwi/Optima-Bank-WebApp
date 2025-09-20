@@ -90,7 +90,7 @@ export const ShimmerButton = React.forwardRef<HTMLButtonElement, ShimmerButtonPr
         ref,
         ...props,
         children: shimmerContent,
-      } as any);
+      } as React.ReactElement);
     }
 
     return (
