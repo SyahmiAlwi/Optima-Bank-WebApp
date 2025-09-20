@@ -90,7 +90,6 @@ export const ShimmerButton = React.forwardRef<HTMLButtonElement, ShimmerButtonPr
         className: cn(shimmerClasses, (children.props as { className?: string }).className),
         ref,
         ...props,
-        children: shimmerContent,
       });
     }
 
