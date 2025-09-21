@@ -52,10 +52,7 @@ export default function AuthCallbackPage() {
         
         if (code) {
           console.log("Processing code flow");
-          const { data, error } = await supabase.auth.exchangeCodeForSession({
-            code,
-            code_verifier: sessionStorage.getItem("code_verifier") || undefined,
-          });
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
           
           if (error) {
             console.error("Code exchange error:", error);
