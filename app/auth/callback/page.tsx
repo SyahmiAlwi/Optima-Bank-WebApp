@@ -11,33 +11,68 @@ export default function AuthCallbackPage() {
   useEffect(() => {
     const handleOAuthCallback = async () => {
       try {
-        // Prefer PKCE/code flow if present
-        const hasCodeParams = typeof window !== "undefined" && (window.location.search.includes("code=") || window.location.search.includes("access_token="));
-        if (hasCodeParams) {
-          await supabase.auth.exchangeCodeForSession(window.location.href);
-          router.replace("/home");
-          return;
-        }
+        console.log("Auth callback started");
+        console.log("Current URL:", window.location.href);
+        console.log("Hash:", window.location.hash);
+        console.log("Search:", window.location.search);
 
-        // Handle hash-based implicit flow fallback
+        // Check for hash-based tokens first (implicit flow)
         const hash = typeof window !== "undefined" ? window.location.hash : "";
         if (hash && hash.includes("access_token") && hash.includes("refresh_token")) {
+          console.log("Processing hash-based tokens");
           const params = new URLSearchParams(hash.replace(/^#/, ""));
-          const access_token = params.get("access_token") ?? undefined;
-          const refresh_token = params.get("refresh_token") ?? undefined;
+          const access_token = params.get("access_token");
+          const refresh_token = params.get("refresh_token");
+          
+          console.log("Access token found:", !!access_token);
+          console.log("Refresh token found:", !!refresh_token);
+          
           if (access_token && refresh_token) {
-            await supabase.auth.setSession({
+            console.log("Setting session with tokens");
+            const { data, error } = await supabase.auth.setSession({
               access_token,
               refresh_token,
             });
+            
+            if (error) {
+              console.error("Auth error:", error);
+              router.replace("/auth");
+              return;
+            }
+            
+            console.log("Session set successfully:", data);
             router.replace("/home");
             return;
           }
         }
 
+        // Check for code flow in URL search params
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get("code");
+        
+        if (code) {
+          console.log("Processing code flow");
+          const { data, error } = await supabase.auth.exchangeCodeForSession({
+            code,
+            code_verifier: sessionStorage.getItem("code_verifier") || undefined,
+          });
+          
+          if (error) {
+            console.error("Code exchange error:", error);
+            router.replace("/auth");
+            return;
+          }
+          
+          console.log("Code exchange successful:", data);
+          router.replace("/home");
+          return;
+        }
+
+        console.log("No valid auth flow detected, redirecting to auth");
         // If nothing matched, go to auth
         router.replace("/auth");
-      } catch {
+      } catch (error) {
+        console.error("Auth callback error:", error);
         router.replace("/auth");
       }
     };
