@@ -6,11 +6,22 @@ import { supabaseBrowser } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { FaHeart, FaShoppingCart } from "react-icons/fa";
 import { GiTwoCoins } from "react-icons/gi";
-import { Navbar } from "@/components/ui/navbar"; // Import Navbar
-import { getUser, fetchVouchers } from "./action";
+import { Navbar } from "@/components/ui/navbar";
+import {
+  getUser,
+  fetchVouchers,
+  addToCart,
+  addToWishlist,
+  redeemVoucher,
+} from "./action";
+import toast, { Toaster } from "react-hot-toast";
 
 export default function VoucherDetailsPage() {
-    const [user, setUser] = useState<{ email?: string; totalpoints?: number } | null>(null);
+  const [user, setUser] = useState<{
+    id?: string;
+    email?: string;
+    totalpoints?: number;
+  } | null>(null);
   const [voucher, setVoucher] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const searchParams = useSearchParams();
@@ -18,26 +29,16 @@ export default function VoucherDetailsPage() {
   const supabase = supabaseBrowser();
 
   // Fetch user
-    useEffect(() => {
-      const loadUser = async () => {
-        const userData = await getUser();
-        setUser(userData);
-        setLoading(false);
-        if (!userData) router.push("/auth");
-      };
-      loadUser();
-    }, [router]);
+  useEffect(() => {
+    const loadUser = async () => {
+      const userData = await getUser();
+      setUser(userData);
+      setLoading(false);
+      if (!userData) router.push("/auth");
+    };
+    loadUser();
+  }, [router]);
 
-    // Fetch vouchers
-      useEffect(() => {
-        const loadVouchers = async () => {
-          const data = await fetchVouchers();
-          setVoucher(data);
-        };
-        loadVouchers();
-      }, []);
-
-      
   // Get voucher ID from query (?id=)
   const voucherId = searchParams.get("id");
 
@@ -62,6 +63,78 @@ export default function VoucherDetailsPage() {
     fetchVoucher();
   }, [voucherId, supabase]);
 
+  // Handle redeem
+  const handleRedeem = async () => {
+    if (!user?.id || !voucher) return;
+
+    const result = await redeemVoucher(user.id, voucher.id, voucher.points);
+    if (result.success) {
+      toast.success(result.message, {
+        duration: 3000,
+        position: "top-center",
+      });
+      // Update user points in state
+      setUser((prev) =>
+        prev ? { ...prev, totalpoints: result.newBalance } : null
+      );
+    } else {
+      toast.error(result.message, {
+        duration: 4000,
+        position: "top-center",
+      });
+    }
+  };
+
+  // Handle add to cart
+  const handleAddToCart = async () => {
+    if (!user?.id || !voucher) return;
+
+    const userPoints = user.totalpoints ?? 0;
+
+    // Check if user has enough points to redeem the voucher
+    if (userPoints < voucher.points) {
+      toast.error(
+        `Cannot add to cart! You need ${voucher.points} points but only have ${userPoints} points.`,
+        {
+          duration: 4000,
+          position: "top-center",
+        }
+      );
+      return;
+    }
+
+    const result = await addToCart(user.id, voucher.id);
+    if (result.success) {
+      toast.success(result.message, {
+        duration: 3000,
+        position: "top-center",
+      });
+    } else {
+      toast.error(result.message, {
+        duration: 4000,
+        position: "top-center",
+      });
+    }
+  };
+
+  // Handle add to wishlist
+  const handleAddToWishlist = async () => {
+    if (!user?.id || !voucher) return;
+
+    const result = await addToWishlist(user.id, voucher.id);
+    if (result.success) {
+      toast.success(result.message, {
+        duration: 3000,
+        position: "top-center",
+      });
+    } else {
+      toast.error(result.message, {
+        duration: 4000,
+        position: "top-center",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="h-svh flex items-center justify-center">
@@ -85,8 +158,12 @@ export default function VoucherDetailsPage() {
     3: "Entertainment",
   };
 
+  const userPoints = user?.totalpoints ?? 0;
+  const canRedeem = userPoints >= voucher.points;
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
+      <Toaster />
       {/* Navbar */}
       <Navbar user={user ?? undefined} />
 
@@ -111,7 +188,9 @@ export default function VoucherDetailsPage() {
 
           {/* Title + Category */}
           <div className="flex justify-between items-center mb-2">
-            <h1 className="text-2xl font-bold text-gray-800">{voucher.title}</h1>
+            <h1 className="text-2xl font-bold text-gray-800">
+              {voucher.title}
+            </h1>
             <span className="text-sm font-medium text-[#512da8]">
               {categoryMap[voucher.category_id] || "Other"}
             </span>
@@ -121,6 +200,11 @@ export default function VoucherDetailsPage() {
           <div className="flex items-center space-x-2 text-gray-700 mb-4">
             <GiTwoCoins className="text-yellow-500" />
             <p>Redeem for {voucher.points} points</p>
+            {!canRedeem && (
+              <span className="text-red-500 text-sm ml-4">
+                (Need {voucher.points - userPoints} more points)
+              </span>
+            )}
           </div>
 
           {/* Description */}
@@ -139,20 +223,34 @@ export default function VoucherDetailsPage() {
           {/* Action Buttons */}
           <div className="mt-6 flex justify-between items-center">
             <Button
-              className="bg-[#512da8] text-white px-6 py-2 rounded-md"
-              onClick={() => alert(`Redeemed: ${voucher.title}`)}
+              className={`px-6 py-2 rounded-md ${
+                canRedeem
+                  ? "bg-[#512da8] text-white hover:bg-[#6a3fe3]"
+                  : "bg-gray-400 text-gray-600 cursor-not-allowed"
+              }`}
+              onClick={handleRedeem}
+              disabled={!canRedeem}
             >
-              Redeem
+              {canRedeem ? "Redeem" : "Insufficient Points"}
             </Button>
 
             <div className="flex space-x-4 text-gray-600 text-xl">
               <FaHeart
                 className="cursor-pointer hover:text-red-500"
-                onClick={() => alert(`Added ${voucher.title} to wishlist`)}
+                onClick={handleAddToWishlist}
               />
               <FaShoppingCart
-                className="cursor-pointer hover:text-[#512da8]"
-                onClick={() => alert(`Added ${voucher.title} to cart`)}
+                className={`cursor-pointer ${
+                  canRedeem
+                    ? "hover:text-[#512da8]"
+                    : "text-gray-400 cursor-not-allowed opacity-50"
+                }`}
+                onClick={() => canRedeem && handleAddToCart()}
+                title={
+                  canRedeem
+                    ? "Add to cart"
+                    : "Insufficient points to add to cart"
+                }
               />
             </div>
           </div>
