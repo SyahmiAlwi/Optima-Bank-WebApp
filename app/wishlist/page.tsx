@@ -1,89 +1,120 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { Card, CardContent } from "@/components/ui/card";
-import WishlistButton from "./WishlistButton";
-
-type Voucher = {
-  id: string;
-  title: string;
-  description: string;
-  image_url: string;
-};
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Navbar } from "@/components/ui/navbar";
+import { GiTwoCoins } from "react-icons/gi";
+import { FaHeart, FaShoppingCart } from "react-icons/fa";
+import { getUser, fetchWishlistVouchers, removeFromWishlist } from "./action"; // ✅ you'll implement these
 
 export default function WishlistPage() {
-  const supabase = createClientComponentClient();
-  const [vouchers, setVouchers] = useState<Voucher[]>([]);
+  const [user, setUser] = useState<{ email?: string; totalpoints?: number } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [wishlistIds, setWishlistIds] = useState<string[]>([]);
+  const [wishlistVouchers, setWishlistVouchers] = useState<any[]>([]);
+  const router = useRouter();
 
-  // Load current user
+  // Fetch user
   useEffect(() => {
-    const getUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) setUserId(user.id);
+    const loadUser = async () => {
+      const userData = await getUser();
+      setUser(userData);
+      setLoading(false);
+      if (!userData) router.push("/auth");
     };
-    getUser();
-  }, [supabase]);
+    loadUser();
+  }, [router]);
 
   // Fetch wishlist vouchers
   useEffect(() => {
-    if (!userId) return;
-    const fetchWishlist = async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("wishlist")
-        .select("voucher_id, vouchers(*)")
-        .eq("user_id", userId);
-
-      if (error) {
-        console.error(error);
-      } else {
-        setVouchers(data.map((item: any) => item.vouchers));
-        setWishlistIds(data.map((item: any) => item.voucher_id));
-      }
-      setLoading(false);
+    const loadWishlist = async () => {
+      const data = await fetchWishlistVouchers();
+      setWishlistVouchers(data);
     };
-    fetchWishlist();
-  }, [userId, supabase]);
+    loadWishlist();
+  }, []);
 
-  if (loading) return <p className="p-6">Loading wishlist...</p>;
+  if (loading) {
+    return (
+      <div className="h-svh flex items-center justify-center bg-gradient-to-r from-gray-200 to-indigo-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#512da8] mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) return null;
+
+  const userPoints = user.totalpoints ?? 0;
+
+  const handleRemove = async (voucherId: number) => {
+    await removeFromWishlist(voucherId);
+    setWishlistVouchers((prev) => prev.filter((v) => v.id !== voucherId));
+  };
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">My Wishlist</h1>
-      {vouchers.length === 0 ? (
-        <p className="text-gray-500">No vouchers in your wishlist yet.</p>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {vouchers.map((voucher) => (
-            <Card key={voucher.id} className="relative shadow-md rounded-2xl">
-              <img
-                src={voucher.image_url}
-                alt={voucher.title}
-                className="rounded-t-2xl h-40 w-full object-cover"
-              />
-              <CardContent className="p-4">
-                <h2 className="font-semibold text-lg">{voucher.title}</h2>
-                <p className="text-sm text-gray-600">{voucher.description}</p>
-              </CardContent>
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      {/* Navbar */}
+      <Navbar user={user ?? undefined} />
 
-              {/* Reusable Button */}
-              <div className="absolute top-3 right-3">
-                <WishlistButton
-                  userId={userId!}
-                  voucherId={voucher.id}
-                  isInitiallyInWishlist={wishlistIds.includes(voucher.id)}
-                />
-              </div>
-            </Card>
-          ))}
-        </div>
-      )}
+      {/* Page Layout: Sidebar + Main */}
+      <div className="flex flex-1 min-h-screen">
+        {/* Sidebar */}
+        <aside className="w-40 h-full border-r border-gray-200 flex flex-col pt-6">
+          <h2 className="px-4 text-lg font-bold text-[#512da8] mb-4">Wishlist</h2>
+          <p className="px-4 text-sm text-gray-500">Your saved vouchers</p>
+        </aside>
+
+        {/* Main Content */}
+        <main className="flex-1 p-6">
+          <h2 className="text-xl font-semibold mb-4">My Wishlist</h2>
+
+          {/* Voucher grid */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {wishlistVouchers.length > 0 ? (
+              wishlistVouchers.map((voucher, index) => (
+                <div key={index} className="bg-white rounded-lg shadow-md p-4">
+                  <img
+                    src={`/images/${voucher.image || "default.jpg"}`}
+                    alt={voucher.title}
+                    className="w-full h-32 object-cover rounded-md mb-3 cursor-pointer"
+                    onClick={() => router.push(`/voucherdetails?id=${voucher.id}`)}
+                  />
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold text-gray-800">{voucher.title}</h3>
+                    <span className="flex items-center text-yellow-500 font-semibold text-sm">
+                      <GiTwoCoins className="mr-1 text-base" />
+                      {voucher.points}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center mt-3">
+                    <Button
+                      className="bg-[#512da8] text-white px-3 py-1 text-sm"
+                      onClick={() => alert(`Redeemed: ${voucher.title}`)}
+                    >
+                      Redeem
+                    </Button>
+                    <div className="flex space-x-3 text-gray-600 text-lg">
+                      <FaHeart
+                        className="cursor-pointer hover:text-red-500"
+                        onClick={() => handleRemove(voucher.id)}
+                      />
+                      <FaShoppingCart
+                        className="cursor-pointer hover:text-[#512da8]"
+                        onClick={() => alert(`Added ${voucher.title} to cart`)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500">No vouchers in wishlist</p>
+            )}
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
