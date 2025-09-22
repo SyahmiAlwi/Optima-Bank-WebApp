@@ -5,3 +5,4 @@
 - Add confirmation remove item and all items.
 - Add toast messages.
 - Install the following before running start the server: npm install react-hot-toast
+- Add wishlist functionality.
