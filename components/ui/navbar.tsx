@@ -29,31 +29,41 @@ export function Navbar({ user }: { user?: { totalpoints?: number } }) {
       <div className="flex space-x-6 font-medium text-white">
         <button
           onClick={() => router.push("/home")}
-          className={`${isActive("/home") ? "text-yellow-300 font-bold" : "text-white"} hover:text-yellow-300`}
+          className={`${
+            isActive("/home") ? "text-yellow-300 font-bold" : "text-white"
+          } hover:text-yellow-300`}
         >
           Home
         </button>
         <button
           onClick={() => router.push("/rewards")}
-          className={`${isActive("/rewards") ? "text-yellow-300 font-bold" : "text-white"} hover:text-yellow-300`}
+          className={`${
+            isActive("/rewards") ? "text-yellow-300 font-bold" : "text-white"
+          } hover:text-yellow-300`}
         >
           Rewards
         </button>
         <button
           onClick={() => router.push("/vouchers")}
-          className={`${isActive("/vouchers") ? "text-yellow-300 font-bold" : "text-white"} hover:text-yellow-300`}
+          className={`${
+            isActive("/vouchers") ? "text-yellow-300 font-bold" : "text-white"
+          } hover:text-yellow-300`}
         >
           Voucher
         </button>
         <button
           onClick={() => router.push("/wishlist")}
-          className={`${isActive("/wishlist") ? "text-yellow-300 font-bold" : "text-white"} hover:text-yellow-300`}
+          className={`flex items-center space-x-1 ${
+            isActive("/wishlist") ? "text-yellow-300 font-bold" : "text-white"
+          } hover:text-yellow-300`}
         >
           Wishlist
         </button>
         <button
           onClick={() => router.push("/cart")}
-          className={`${isActive("/cart") ? "text-yellow-300 font-bold" : "text-white"} hover:text-yellow-300`}
+          className={`${
+            isActive("/cart") ? "text-yellow-300 font-bold" : "text-white"
+          } hover:text-yellow-300`}
         >
           Cart
         </button>
@@ -64,9 +74,7 @@ export function Navbar({ user }: { user?: { totalpoints?: number } }) {
         {/* Coins */}
         <div className="flex items-center space-x-1 text-white">
           <GiTwoCoins className="text-yellow-500 text-xl" />
-          <span className="font-semibold">
-            {user?.totalpoints ?? 0}
-          </span>
+          <span className="font-semibold">{user?.totalpoints ?? 0}</span>
         </div>
 
         {/* Profile Dropdown */}

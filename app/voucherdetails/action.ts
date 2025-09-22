@@ -92,33 +92,54 @@ export const addToCart = async (userId: string, voucherId: number) => {
 export const addToWishlist = async (userId: string, voucherId: number) => {
   const supabase = supabaseBrowser();
 
-  // Check if item already exists in wishlist
-  const { data: existingItem, error: checkError } = await supabase
-    .from("wishlist")
-    .select("*")
-    .eq("user_id", userId)
-    .eq("voucher_id", voucherId)
-    .single();
+  try {
+    // Check if item already exists in wishlist
+    const { data: existingItem, error: checkError } = await supabase
+      .from("wishlist")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("voucher_id", voucherId)
+      .single();
 
-  if (checkError && checkError.code !== "PGRST116") {
-    console.error("Error checking wishlist:", checkError);
-    return { success: false, message: "Error checking wishlist" };
+    // Handle the case where no record is found (PGRST116 is "not found" error)
+    if (checkError && checkError.code !== "PGRST116") {
+      console.error("Error checking wishlist:", checkError);
+      return { success: false, message: "Error checking wishlist" };
+    }
+
+    if (existingItem) {
+      return { success: false, message: "Item already in wishlist" };
+    }
+
+    // Add new item to wishlist
+    const { data: insertData, error: insertError } = await supabase
+      .from("wishlist")
+      .insert({
+        user_id: userId,
+        voucher_id: voucherId,
+      })
+      .select(); // Add select to get the inserted data
+
+    if (insertError) {
+      console.error("Error adding to wishlist:", {
+        error: insertError,
+        message: insertError.message,
+        code: insertError.code,
+        details: insertError.details,
+        hint: insertError.hint,
+      });
+      return {
+        success: false,
+        message: insertError.message || "Error adding to wishlist",
+      };
+    }
+
+    console.log("Successfully added to wishlist:", insertData);
+    return { success: true, message: "Item added to wishlist" };
+  } catch (error) {
+    console.error("Unexpected error in addToWishlist:", error);
+    return { success: false, message: "An unexpected error occurred" };
   }
-
-  if (existingItem) {
-    return { success: false, message: "Item already in wishlist" };
-  }
-
-  const { error: insertError } = await supabase.from("wishlist").insert({
-    user_id: userId,
-    voucher_id: voucherId,
-  });
-
-  if (insertError) {
-    console.error("Error adding to wishlist:", insertError);
-    return { success: false, message: "Error adding to wishlist" };
-  }
-  return { success: true, message: "Item added to wishlist" };
 };
 
 // Redeem voucher functionality

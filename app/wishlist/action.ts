@@ -32,15 +32,53 @@ export const getUser = async () => {
   };
 };
 
-// Fetch all vouchers
-export const fetchVouchers = async () => {
+// Fetch wishlist items for a user
+export const fetchWishlistItems = async (userId: string) => {
   const supabase = supabaseBrowser();
-  const { data, error } = await supabase.from("voucher").select("*");
+
+  const { data, error } = await supabase
+    .from("wishlist")
+    .select(
+      `
+      id,
+      voucher_id,
+      created_at,
+      voucher (
+        id,
+        title,
+        description,
+        points,
+        image,
+        category_id,
+        terms
+      )
+    `
+    )
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
   if (error) {
-    console.error("Error fetching vouchers:", error);
+    console.error("Error fetching wishlist items:", error);
     return [];
   }
   return data || [];
+};
+
+// Remove from wishlist functionality
+export const removeFromWishlist = async (wishlistId: number) => {
+  const supabase = supabaseBrowser();
+
+  const { error } = await supabase
+    .from("wishlist")
+    .delete()
+    .eq("id", wishlistId);
+
+  if (error) {
+    console.error("Error removing from wishlist:", error);
+    return { success: false, message: "Error removing from wishlist" };
+  }
+
+  return { success: true, message: "Item removed from wishlist" };
 };
 
 // Add to cart functionality
@@ -88,60 +126,6 @@ export const addToCart = async (userId: string, voucherId: number) => {
   }
 };
 
-// Add to wishlist functionality
-export const addToWishlist = async (userId: string, voucherId: number) => {
-  const supabase = supabaseBrowser();
-
-  try {
-    // Check if item already exists in wishlist
-    const { data: existingItem, error: checkError } = await supabase
-      .from("wishlist")
-      .select("*")
-      .eq("user_id", userId)
-      .eq("voucher_id", voucherId)
-      .single();
-
-    // Handle the case where no record is found (PGRST116 is "not found" error)
-    if (checkError && checkError.code !== "PGRST116") {
-      console.error("Error checking wishlist:", checkError);
-      return { success: false, message: "Error checking wishlist" };
-    }
-
-    if (existingItem) {
-      return { success: false, message: "Item already in wishlist" };
-    }
-
-    // Add new item to wishlist
-    const { data: insertData, error: insertError } = await supabase
-      .from("wishlist")
-      .insert({
-        user_id: userId,
-        voucher_id: voucherId,
-      })
-      .select(); // Add select to get the inserted data
-
-    if (insertError) {
-      console.error("Error adding to wishlist:", {
-        error: insertError,
-        message: insertError.message,
-        code: insertError.code,
-        details: insertError.details,
-        hint: insertError.hint,
-      });
-      return {
-        success: false,
-        message: insertError.message || "Error adding to wishlist",
-      };
-    }
-
-    console.log("Successfully added to wishlist:", insertData);
-    return { success: true, message: "Item added to wishlist" };
-  } catch (error) {
-    console.error("Unexpected error in addToWishlist:", error);
-    return { success: false, message: "An unexpected error occurred" };
-  }
-};
-
 // Redeem voucher functionality
 export const redeemVoucher = async (
   userId: string,
@@ -151,8 +135,7 @@ export const redeemVoucher = async (
   const supabase = supabaseBrowser();
 
   try {
-    // Start a transaction-like operation
-    // First, check current user points
+    // Check current user points
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("totalpoints")
@@ -180,7 +163,7 @@ export const redeemVoucher = async (
       return { success: false, message: "Error updating user points" };
     }
 
-    // Record the redemption in redemptions table
+    // Record the redemption
     const { error: redemptionError } = await supabase
       .from("redemptions")
       .insert({
@@ -209,11 +192,4 @@ export const redeemVoucher = async (
     console.error("Redeem error:", error);
     return { success: false, message: "An unexpected error occurred" };
   }
-};
-
-// Sign out user
-export const signOutUser = async () => {
-  const supabase = supabaseBrowser();
-  const { error } = await supabase.auth.signOut();
-  if (error) console.error("Error signing out:", error);
 };

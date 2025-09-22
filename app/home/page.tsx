@@ -32,6 +32,7 @@ export default function HomePage() {
   const [vouchers, setVouchers] = useState<any[]>([]);
   const [promoIndex, setPromoIndex] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
+  const [wishlistItems, setWishlistItems] = useState<Set<number>>(new Set());
   const router = useRouter();
 
   // Fetch user
@@ -53,6 +54,36 @@ export default function HomePage() {
     };
     loadVouchers();
   }, []);
+
+  // Fetch user's wishlist items to show heart status
+  useEffect(() => {
+    const loadWishlistItems = async () => {
+      if (!user?.id) return;
+
+      try {
+        const { supabaseBrowser } = await import("@/lib/supabase/client");
+        const supabase = supabaseBrowser();
+
+        const { data, error } = await supabase
+          .from("wishlist")
+          .select("voucher_id")
+          .eq("user_id", user.id);
+
+        if (!error && data) {
+          const wishlistVoucherIds = new Set(
+            data.map((item) => item.voucher_id)
+          );
+          setWishlistItems(wishlistVoucherIds);
+        }
+      } catch (error) {
+        console.error("Error fetching wishlist items:", error);
+      }
+    };
+
+    if (user?.id) {
+      loadWishlistItems();
+    }
+  }, [user?.id]);
 
   // Handle add to cart
   const handleAddToCart = async (
@@ -103,6 +134,8 @@ export default function HomePage() {
         duration: 3000,
         position: "top-center",
       });
+      // Add to local wishlist state
+      setWishlistItems((prev) => new Set([...prev, voucherId]));
     } else {
       toast.error(result.message, {
         duration: 4000,
@@ -296,6 +329,7 @@ export default function HomePage() {
             {searchedVouchers.length > 0 ? (
               searchedVouchers.map((voucher, index) => {
                 const canRedeem = userPoints >= voucher.points;
+                const isInWishlist = wishlistItems.has(voucher.id);
 
                 return (
                   <div
@@ -334,9 +368,16 @@ export default function HomePage() {
                       </Button>
                       <div className="flex space-x-3 text-gray-600 text-lg">
                         <FaHeart
-                          className="cursor-pointer hover:text-red-500"
+                          className={`cursor-pointer ${
+                            isInWishlist ? "text-red-500" : "hover:text-red-500"
+                          }`}
                           onClick={() =>
                             handleAddToWishlist(voucher.id, voucher.title)
+                          }
+                          title={
+                            isInWishlist
+                              ? "Already in wishlist"
+                              : "Add to wishlist"
                           }
                         />
                         <FaShoppingCart
