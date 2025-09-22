@@ -1,6 +1,7 @@
 "use client";
 
 import { supabaseBrowser } from "@/lib/supabase/client";
+import jsPDF from "jspdf";
 
 // Fetch all vouchers
 export const fetchVouchers = async () => {
@@ -212,4 +213,157 @@ export const signOutUser = async () => {
   const supabase = supabaseBrowser();
   const { error } = await supabase.auth.signOut();
   if (error) console.error("Error signing out:", error);
+};
+
+// Add function to generate and download voucher PDF
+export const generateVoucherPDF = (
+  voucher: {
+    title: string;
+    description: string;
+    points: number;
+    quantity: number;
+  },
+  userEmail: string
+) => {
+  const doc = new jsPDF();
+
+  // Set up the PDF styling
+  doc.setFontSize(20);
+  doc.setTextColor(81, 45, 168); // Purple color #512da8
+  doc.text("Optima Bank - Voucher", 20, 30);
+
+  // Add voucher details
+  doc.setFontSize(16);
+  doc.setTextColor(0, 0, 0);
+  doc.text(`Voucher: ${voucher.title}`, 20, 50);
+
+  doc.setFontSize(12);
+  doc.text(`Description: ${voucher.description}`, 20, 70);
+  doc.text(`Points Redeemed: ${voucher.points * voucher.quantity}`, 20, 85);
+  doc.text(`Quantity: ${voucher.quantity}`, 20, 100);
+  doc.text(`Redeemed by: ${userEmail}`, 20, 115);
+  doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 130);
+
+  // Add a voucher code (you can make this more sophisticated)
+  const voucherCode = `OB-${Date.now()}-${Math.random()
+    .toString(36)
+    .substr(2, 9)
+    .toUpperCase()}`;
+  doc.setFontSize(14);
+  doc.setTextColor(81, 45, 168);
+  doc.text(`Voucher Code: ${voucherCode}`, 20, 150);
+
+  // Add terms and conditions
+  doc.setFontSize(10);
+  doc.setTextColor(100, 100, 100);
+  doc.text("Terms & Conditions:", 20, 170);
+  doc.text(
+    "- This voucher is valid for 6 months from the date of issue",
+    20,
+    180
+  );
+  doc.text("- This voucher cannot be exchanged for cash", 20, 190);
+  doc.text("- Present this voucher at participating merchants", 20, 200);
+
+  // Add a border
+  doc.setDrawColor(81, 45, 168);
+  doc.setLineWidth(2);
+  doc.rect(10, 10, 190, 267);
+
+  // Download the PDF
+  const fileName = `${voucher.title.replace(/\s+/g, "_")}_${Date.now()}.pdf`;
+  doc.save(fileName);
+
+  return voucherCode;
+};
+
+// Add function to download all redeemed vouchers as a single PDF
+export const generateAllVouchersPDF = (
+  vouchers: Array<{
+    title: string;
+    description: string;
+    points: number;
+    quantity: number;
+  }>,
+  userEmail: string
+) => {
+  const doc = new jsPDF();
+  let yPosition = 30;
+
+  // Header
+  doc.setFontSize(20);
+  doc.setTextColor(81, 45, 168);
+  doc.text("Optima Bank - Voucher Bundle", 20, yPosition);
+  yPosition += 20;
+
+  doc.setFontSize(12);
+  doc.setTextColor(0, 0, 0);
+  doc.text(`Redeemed by: ${userEmail}`, 20, yPosition);
+  yPosition += 10;
+  doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, yPosition);
+  yPosition += 20;
+
+  vouchers.forEach((voucher, index) => {
+    // Check if we need a new page
+    if (yPosition > 250) {
+      doc.addPage();
+      yPosition = 30;
+    }
+
+    // Voucher details
+    doc.setFontSize(14);
+    doc.setTextColor(81, 45, 168);
+    doc.text(`${index + 1}. ${voucher.title}`, 20, yPosition);
+    yPosition += 10;
+
+    doc.setFontSize(11);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Description: ${voucher.description}`, 25, yPosition);
+    yPosition += 8;
+    doc.text(
+      `Points: ${voucher.points * voucher.quantity} (Qty: ${voucher.quantity})`,
+      25,
+      yPosition
+    );
+    yPosition += 8;
+
+    // Generate voucher code
+    const voucherCode = `OB-${Date.now()}-${index}-${Math.random()
+      .toString(36)
+      .substr(2, 6)
+      .toUpperCase()}`;
+    doc.setTextColor(81, 45, 168);
+    doc.text(`Code: ${voucherCode}`, 25, yPosition);
+    yPosition += 15;
+
+    // Add separator line
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.5);
+    doc.line(20, yPosition, 190, yPosition);
+    yPosition += 10;
+  });
+
+  // Add terms at the end
+  if (yPosition > 220) {
+    doc.addPage();
+    yPosition = 30;
+  }
+
+  doc.setFontSize(10);
+  doc.setTextColor(100, 100, 100);
+  doc.text("Terms & Conditions:", 20, yPosition);
+  yPosition += 10;
+  doc.text(
+    "- These vouchers are valid for 6 months from the date of issue",
+    20,
+    yPosition
+  );
+  yPosition += 8;
+  doc.text("- Vouchers cannot be exchanged for cash", 20, yPosition);
+  yPosition += 8;
+  doc.text("- Present vouchers at participating merchants", 20, yPosition);
+
+  // Download the PDF
+  const fileName = `Voucher_Bundle_${Date.now()}.pdf`;
+  doc.save(fileName);
 };

@@ -5,13 +5,21 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { Navbar } from "@/components/ui/navbar";
-import { FaBasketballBall, FaUtensils, FaFilm, FaTrash } from "react-icons/fa";
+import {
+  FaBasketballBall,
+  FaUtensils,
+  FaFilm,
+  FaTrash,
+  FaDownload,
+} from "react-icons/fa";
 import {
   getUser,
   removeFromCart,
   removeAllFromCart,
   updateCartQuantity,
   processRedemption,
+  generateVoucherPDF,
+  generateAllVouchersPDF,
 } from "./action";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -40,6 +48,15 @@ export default function CartPage() {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<number | null>(null);
   const router = useRouter();
+  const [checkoutSuccess, setCheckoutSuccess] = useState(false);
+  const [redeemedVouchers, setRedeemedVouchers] = useState<
+    Array<{
+      title: string;
+      description: string;
+      points: number;
+      quantity: number;
+    }>
+  >([]);
 
   // Fetch user and cart
   useEffect(() => {
@@ -348,6 +365,15 @@ export default function CartPage() {
         // Don't block the process, just log the error
       }
 
+      // Store redeemed vouchers for PDF generation
+      const vouchersForPDF = selectedItems.map((item) => ({
+        title: item.voucher.title,
+        description: item.voucher.description,
+        points: item.voucher.points,
+        quantity: item.quantity,
+      }));
+      setRedeemedVouchers(vouchersForPDF);
+
       // Update local state
       setCartItems((prev) =>
         prev.filter((item) => !selectedIds.includes(item.id))
@@ -355,6 +381,9 @@ export default function CartPage() {
       setUser((prev) =>
         prev ? { ...prev, totalpoints: userPoints - totalPointsNeeded } : null
       );
+
+      // Show checkout success state
+      setCheckoutSuccess(true);
 
       // Dismiss loading toast and show success message
       toast.dismiss(loadingToast);
@@ -406,6 +435,51 @@ export default function CartPage() {
         );
       }
     }
+  };
+
+  // Handle individual voucher download
+  const downloadVoucher = (voucher: {
+    title: string;
+    description: string;
+    points: number;
+    quantity: number;
+  }) => {
+    try {
+      generateVoucherPDF(voucher, user?.email || "Unknown User");
+      toast.success(`Downloaded ${voucher.title} voucher`, {
+        duration: 3000,
+        position: "top-center",
+      });
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast.error("Failed to generate voucher PDF", {
+        duration: 3000,
+        position: "top-center",
+      });
+    }
+  };
+
+  // Handle download all vouchers
+  const downloadAllVouchers = () => {
+    try {
+      generateAllVouchersPDF(redeemedVouchers, user?.email || "Unknown User");
+      toast.success("Downloaded all vouchers as bundle", {
+        duration: 3000,
+        position: "top-center",
+      });
+    } catch (error) {
+      console.error("Error generating bundle PDF:", error);
+      toast.error("Failed to generate voucher bundle PDF", {
+        duration: 3000,
+        position: "top-center",
+      });
+    }
+  };
+
+  // Reset checkout success state
+  const resetCheckoutState = () => {
+    setCheckoutSuccess(false);
+    setRedeemedVouchers([]);
   };
 
   if (loading) {
@@ -730,57 +804,109 @@ export default function CartPage() {
             </div>
           </div>
 
-          {/* Right: Summary */}
+          {/* Right: Summary or Download Section */}
           <div className="w-64 bg-white p-4 rounded-lg shadow">
-            <h3 className="font-semibold mb-4">Summary</h3>
-            <p>
-              Total items: {cartItems.reduce((acc, i) => acc + i.quantity, 0)}
-            </p>
-            <p className="mt-2">
-              Selected items:{" "}
-              {selectedItems.reduce((acc, i) => acc + i.quantity, 0)}
-            </p>
-            <p className="mt-2">
-              Selected points needed: {totalSelectedPoints}
-            </p>
-            <p className="mt-2 font-semibold">
-              Your total points: {user.totalpoints ?? 0}
-            </p>
-            {totalSelectedPoints > 0 && (
-              <p
-                className={`mt-2 text-sm ${
-                  pointsAfterCheckout < 0 ? "text-red-500" : ""
-                }`}
-              >
-                Points after checkout: {pointsAfterCheckout}
-              </p>
-            )}
-            {/* Show warning if some items would become unaffordable */}
-            {pointsAfterCheckout >= 0 && selectedItems.length > 0 && (
-              <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded">
-                <p className="text-yellow-700 text-xs">
-                  {
-                    cartItems.filter(
-                      (item) =>
-                        !item.selected &&
-                        item.quantity * item.voucher.points >
-                          pointsAfterCheckout
-                    ).length
-                  }{" "}
-                  item(s) will become unaffordable after checkout
+            {checkoutSuccess && redeemedVouchers.length > 0 ? (
+              // Show download options after successful checkout
+              <div>
+                <h3 className="font-semibold mb-4 text-green-600">
+                  Checkout Complete! 🎉
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Your vouchers are ready for download:
                 </p>
+
+                {/* Download All Button */}
+                <Button
+                  className="w-full mb-3 bg-[#512da8] text-white hover:bg-[#6a3fe3] flex items-center justify-center gap-2"
+                  onClick={downloadAllVouchers}
+                >
+                  <FaDownload />
+                  Download All ({redeemedVouchers.length})
+                </Button>
+
+                {/* Individual voucher downloads */}
+                <div className="space-y-2 mb-4">
+                  <p className="text-xs text-gray-500 font-medium">
+                    Individual Downloads:
+                  </p>
+                  {redeemedVouchers.map((voucher, index) => (
+                    <button
+                      key={index}
+                      onClick={() => downloadVoucher(voucher)}
+                      className="w-full text-left p-2 text-xs bg-gray-50 hover:bg-gray-100 rounded border flex items-center justify-between group"
+                    >
+                      <span className="truncate">
+                        {voucher.title} (x{voucher.quantity})
+                      </span>
+                      <FaDownload className="opacity-0 group-hover:opacity-100 transition-opacity text-[#512da8]" />
+                    </button>
+                  ))}
+                </div>
+
+                {/* Reset button */}
+                <Button
+                  className="w-full text-sm bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  onClick={resetCheckoutState}
+                >
+                  Continue Shopping
+                </Button>
+              </div>
+            ) : (
+              // Show regular summary
+              <div>
+                <h3 className="font-semibold mb-4">Summary</h3>
+                <p>
+                  Total items:{" "}
+                  {cartItems.reduce((acc, i) => acc + i.quantity, 0)}
+                </p>
+                <p className="mt-2">
+                  Selected items:{" "}
+                  {selectedItems.reduce((acc, i) => acc + i.quantity, 0)}
+                </p>
+                <p className="mt-2">
+                  Selected points needed: {totalSelectedPoints}
+                </p>
+                <p className="mt-2 font-semibold">
+                  Your total points: {user.totalpoints ?? 0}
+                </p>
+                {totalSelectedPoints > 0 && (
+                  <p
+                    className={`mt-2 text-sm ${
+                      pointsAfterCheckout < 0 ? "text-red-500" : ""
+                    }`}
+                  >
+                    Points after checkout: {pointsAfterCheckout}
+                  </p>
+                )}
+                {/* Show warning if some items would become unaffordable */}
+                {pointsAfterCheckout >= 0 && selectedItems.length > 0 && (
+                  <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded">
+                    <p className="text-yellow-700 text-xs">
+                      {
+                        cartItems.filter(
+                          (item) =>
+                            !item.selected &&
+                            item.quantity * item.voucher.points >
+                              pointsAfterCheckout
+                        ).length
+                      }{" "}
+                      item(s) will become unaffordable after checkout
+                    </p>
+                  </div>
+                )}
+                <Button
+                  className="mt-4 w-full bg-[#512da8] text-white hover:bg-[#6a3fe3] disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                  onClick={handleCheckout}
+                  disabled={
+                    selectedItems.length === 0 ||
+                    totalSelectedPoints > (user.totalpoints ?? 0)
+                  }
+                >
+                  Checkout Selected ({selectedItems.length})
+                </Button>
               </div>
             )}
-            <Button
-              className="mt-4 w-full bg-[#512da8] text-white hover:bg-[#6a3fe3] disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-              onClick={handleCheckout}
-              disabled={
-                selectedItems.length === 0 ||
-                totalSelectedPoints > (user.totalpoints ?? 0)
-              }
-            >
-              Checkout Selected ({selectedItems.length})
-            </Button>
           </div>
         </main>
       </div>
