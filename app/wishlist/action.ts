@@ -1,59 +1,49 @@
 "use client";
 
-import { useState } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { Heart } from "lucide-react";
+import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
+import { cookies } from "next/headers";
 
-interface WishlistButtonProps {
-  userId: string;
-  voucherId: string;
-  isInitiallyInWishlist: boolean;
+export async function getUser() {
+  const supabase = createServerComponentClient({ cookies });
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return null;
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("email, totalpoints")
+    .eq("id", user.id)
+    .single();
+
+  return profile;
 }
 
-export default function WishlistButton({
-  userId,
-  voucherId,
-  isInitiallyInWishlist,
-}: WishlistButtonProps) {
-  const supabase = createClientComponentClient();
-  const [isInWishlist, setIsInWishlist] = useState(isInitiallyInWishlist);
-  const [loading, setLoading] = useState(false);
+export async function fetchWishlistVouchers() {
+  const supabase = createServerComponentClient({ cookies });
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
 
-  const toggleWishlist = async () => {
-    if (!userId) return;
-    setLoading(true);
+  const { data, error } = await supabase
+    .from("wishlist")
+    .select("vouchers(*)")
+    .eq("user_id", user.id);
 
-    if (isInWishlist) {
-      // Remove
-      await supabase
-        .from("wishlist")
-        .delete()
-        .eq("user_id", userId)
-        .eq("voucher_id", voucherId);
-      setIsInWishlist(false);
-    } else {
-      // Add
-      await supabase.from("wishlist").insert([
-        { user_id: userId, voucher_id: voucherId },
-      ]);
-      setIsInWishlist(true);
-    }
+  if (error) {
+    console.error(error);
+    return [];
+  }
 
-    setLoading(false);
-  };
+  return data.map((item: any) => item.vouchers);
+}
 
-  return (
-    <button
-      onClick={toggleWishlist}
-      disabled={loading}
-      className="flex items-center gap-2"
-    >
-      <Heart
-        className={`h-6 w-6 ${
-          isInWishlist ? "fill-red-500 text-red-500" : "text-gray-400"
-        }`}
-      />
-      {isInWishlist ? "Remove from Wishlist" : "Add to Wishlist"}
-    </button>
-  );
+export async function removeFromWishlist(voucherId: number) {
+  const supabase = createServerComponentClient({ cookies });
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+
+  await supabase
+    .from("wishlist")
+    .delete()
+    .eq("user_id", user.id)
+    .eq("voucher_id", voucherId);
 }
