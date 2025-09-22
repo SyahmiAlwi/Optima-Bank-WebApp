@@ -6,3 +6,6 @@
 - Add toast messages.
 - Install the following before running start the server: npm install react-hot-toast
 - Add wishlist functionality.
+- Implement download voucher pdf after checkout
+- npm install jspdf
+- npm install @types/jspdf --save-dev
