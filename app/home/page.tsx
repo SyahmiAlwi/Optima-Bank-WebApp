@@ -7,6 +7,7 @@ import { Navbar } from "@/components/ui/navbar";
 import { GiTwoCoins } from "react-icons/gi";
 import {
   FaHeart,
+  FaRegHeart,
   FaShoppingCart,
   FaBasketballBall,
   FaUtensils,
@@ -17,8 +18,10 @@ import {
   fetchVouchers,
   addToCart,
   addToWishlist,
+  removeFromWishlist,
   redeemVoucher,
 } from "./action";
+import { supabaseBrowser } from "@/lib/supabase/client";
 import toast, { Toaster } from "react-hot-toast";
 
 export default function HomePage() {
@@ -30,9 +33,9 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState("All");
   const [vouchers, setVouchers] = useState<any[]>([]);
+  const [wishlistIds, setWishlistIds] = useState<number[]>([]); // Store wishlist voucher IDs
   const [promoIndex, setPromoIndex] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
-  const [wishlistItems, setWishlistItems] = useState<Set<number>>(new Set());
   const router = useRouter();
 
   // Fetch user
@@ -46,44 +49,63 @@ export default function HomePage() {
     loadUser();
   }, [router]);
 
-  // Fetch vouchers
+  // Fetch vouchers + wishlist
   useEffect(() => {
-    const loadVouchers = async () => {
-      const data = await fetchVouchers();
-      setVouchers(data);
-    };
-    loadVouchers();
-  }, []);
+    const loadData = async () => {
+      const vouchersData = await fetchVouchers();
+      setVouchers(vouchersData);
 
-  // Fetch user's wishlist items to show heart status
-  useEffect(() => {
-    const loadWishlistItems = async () => {
-      if (!user?.id) return;
-
-      try {
-        const { supabaseBrowser } = await import("@/lib/supabase/client");
+      if (user?.id) {
         const supabase = supabaseBrowser();
-
-        const { data, error } = await supabase
+        const { data } = await supabase
           .from("wishlist")
           .select("voucher_id")
           .eq("user_id", user.id);
 
-        if (!error && data) {
-          const wishlistVoucherIds = new Set(
-            data.map((item) => item.voucher_id)
-          );
-          setWishlistItems(wishlistVoucherIds);
-        }
-      } catch (error) {
-        console.error("Error fetching wishlist items:", error);
+        setWishlistIds(data?.map((item) => item.voucher_id) || []);
       }
     };
+    loadData();
+  }, [user]);
 
-    if (user?.id) {
-      loadWishlistItems();
+  // Toggle wishlist add/remove
+  const toggleWishlist = async (voucherId: number, voucherTitle: string) => {
+    if (!user) return router.push("/auth");
+
+    const supabase = supabaseBrowser();
+
+    if (wishlistIds.includes(voucherId)) {
+      // Remove from wishlist
+      const result = await removeFromWishlist(user.id, voucherId);
+      if (result.success) {
+        setWishlistIds((prev) => prev.filter((id) => id !== voucherId));
+        toast.success(result.message, {
+          duration: 3000,
+          position: "top-center",
+        });
+      } else {
+        toast.error(result.message, {
+          duration: 4000,
+          position: "top-center",
+        });
+      }
+    } else {
+      // Add to wishlist
+      const result = await addToWishlist(user.id, voucherId);
+      if (result.success) {
+        setWishlistIds((prev) => [...prev, voucherId]);
+        toast.success(result.message, {
+          duration: 3000,
+          position: "top-center",
+        });
+      } else {
+        toast.error(result.message, {
+          duration: 4000,
+          position: "top-center",
+        });
+      }
     }
-  }, [user?.id]);
+  };
 
   // Handle add to cart
   const handleAddToCart = async (
@@ -113,29 +135,6 @@ export default function HomePage() {
         duration: 3000,
         position: "top-center",
       });
-    } else {
-      toast.error(result.message, {
-        duration: 4000,
-        position: "top-center",
-      });
-    }
-  };
-
-  // Handle add to wishlist
-  const handleAddToWishlist = async (
-    voucherId: number,
-    voucherTitle: string
-  ) => {
-    if (!user?.id) return;
-
-    const result = await addToWishlist(user.id, voucherId);
-    if (result.success) {
-      toast.success(result.message, {
-        duration: 3000,
-        position: "top-center",
-      });
-      // Add to local wishlist state
-      setWishlistItems((prev) => new Set([...prev, voucherId]));
     } else {
       toast.error(result.message, {
         duration: 4000,
@@ -250,6 +249,7 @@ export default function HomePage() {
             {activeCategory} Vouchers
           </h2>
 
+          {/* Search Bar */}
           <div className="mb-6 flex justify-center">
             <input
               type="text"
@@ -260,6 +260,7 @@ export default function HomePage() {
             />
           </div>
 
+          {/* Promotional Banner - only show for "All" category and no search */}
           {activeCategory === "All" &&
             promoVouchers.length > 0 &&
             searchTerm === "" && (
@@ -325,15 +326,16 @@ export default function HomePage() {
               </div>
             )}
 
+          {/* Vouchers Grid */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {searchedVouchers.length > 0 ? (
               searchedVouchers.map((voucher, index) => {
                 const canRedeem = userPoints >= voucher.points;
-                const isInWishlist = wishlistItems.has(voucher.id);
+                const isInWishlist = wishlistIds.includes(voucher.id);
 
                 return (
                   <div
-                    key={index}
+                    key={voucher.id}
                     className="bg-white rounded-lg shadow-md p-4"
                   >
                     <img
@@ -344,20 +346,39 @@ export default function HomePage() {
                         router.push(`/voucherdetails?id=${voucher.id}`)
                       }
                     />
+
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="font-semibold text-gray-800">
                         {voucher.title}
                       </h3>
+                      {/* Heart toggle with proper wishlist functionality */}
+                      {isInWishlist ? (
+                        <FaHeart
+                          className="text-red-500 cursor-pointer text-xl transition-transform transform hover:scale-110"
+                          onClick={() => toggleWishlist(voucher.id, voucher.title)}
+                          title="Remove from wishlist"
+                        />
+                      ) : (
+                        <FaRegHeart
+                          className="text-gray-500 cursor-pointer text-xl hover:text-red-500 transition-transform transform hover:scale-110"
+                          onClick={() => toggleWishlist(voucher.id, voucher.title)}
+                          title="Add to wishlist"
+                        />
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between mb-2">
                       <span className="flex items-center text-yellow-400 font-semibold text-sm">
                         <GiTwoCoins className="mr-1 text-yellow-400 text-base" />
                         {voucher.points}
                       </span>
+                      {!canRedeem && (
+                        <p className="text-red-500 text-xs">
+                          Need {voucher.points - userPoints} more
+                        </p>
+                      )}
                     </div>
-                    {!canRedeem && (
-                      <p className="text-red-500 text-xs mb-2">
-                        Need {voucher.points - userPoints} more points
-                      </p>
-                    )}
+
                     <div className="flex justify-between items-center mt-3">
                       <Button
                         className="bg-[#512da8] text-white px-3 py-1 text-sm disabled:bg-gray-400 disabled:cursor-not-allowed"
@@ -366,47 +387,34 @@ export default function HomePage() {
                       >
                         Redeem
                       </Button>
-                      <div className="flex space-x-3 text-gray-600 text-lg">
-                        <FaHeart
-                          className={`cursor-pointer ${
-                            isInWishlist ? "text-red-500" : "hover:text-red-500"
-                          }`}
-                          onClick={() =>
-                            handleAddToWishlist(voucher.id, voucher.title)
-                          }
-                          title={
-                            isInWishlist
-                              ? "Already in wishlist"
-                              : "Add to wishlist"
-                          }
-                        />
-                        <FaShoppingCart
-                          className={`cursor-pointer ${
-                            canRedeem
-                              ? "hover:text-[#512da8]"
-                              : "text-gray-400 cursor-not-allowed opacity-50"
-                          }`}
-                          onClick={() =>
-                            canRedeem &&
-                            handleAddToCart(
-                              voucher.id,
-                              voucher.title,
-                              voucher.points
-                            )
-                          }
-                          title={
-                            canRedeem
-                              ? "Add to cart"
-                              : "Insufficient points to add to cart"
-                          }
-                        />
-                      </div>
+                      <FaShoppingCart
+                        className={`cursor-pointer text-lg ${
+                          canRedeem
+                            ? "hover:text-[#512da8] text-gray-600"
+                            : "text-gray-400 cursor-not-allowed opacity-50"
+                        }`}
+                        onClick={() =>
+                          canRedeem &&
+                          handleAddToCart(
+                            voucher.id,
+                            voucher.title,
+                            voucher.points
+                          )
+                        }
+                        title={
+                          canRedeem
+                            ? "Add to cart"
+                            : "Insufficient points to add to cart"
+                        }
+                      />
                     </div>
                   </div>
                 );
               })
             ) : (
-              <p className="text-gray-500">No vouchers found</p>
+              <p className="text-gray-500 col-span-full text-center py-8">
+                No vouchers found
+              </p>
             )}
           </div>
         </main>

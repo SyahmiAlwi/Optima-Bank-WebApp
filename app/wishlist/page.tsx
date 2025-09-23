@@ -5,11 +5,11 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/ui/navbar";
 import { GiTwoCoins } from "react-icons/gi";
-import { FaTrash, FaShoppingCart } from "react-icons/fa";
+import { FaTrash, FaShoppingCart, FaHeart } from "react-icons/fa";
 import {
   getUser,
   fetchWishlistItems,
-  removeFromWishlist,
+  removeFromWishlistById,
   addToCart,
   redeemVoucher,
 } from "./action";
@@ -53,7 +53,7 @@ export default function WishlistPage() {
     wishlistId: number,
     voucherTitle: string
   ) => {
-    const result = await removeFromWishlist(wishlistId);
+    const result = await removeFromWishlistById(wishlistId);
     if (result.success) {
       toast.success(result.message, {
         duration: 3000,
@@ -194,14 +194,25 @@ export default function WishlistPage() {
                         router.push(`/voucherdetails?id=${voucher.id}`)
                       }
                     />
+                    
+                    {/* Title + Heart icon aligned horizontally */}
                     <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-semibold text-gray-800 text-sm">
+                      <h3 className="font-semibold text-gray-800 text-sm flex-1 mr-2">
                         {voucher.title}
                       </h3>
-                      <span className="flex items-center text-yellow-400 font-semibold text-sm">
-                        <GiTwoCoins className="mr-1 text-yellow-400 text-base" />
-                        {voucher.points}
-                      </span>
+                      <FaHeart
+                        className="text-red-500 cursor-pointer hover:scale-110 transition-transform text-lg flex-shrink-0"
+                        onClick={() =>
+                          handleRemoveFromWishlist(item.id, voucher.title)
+                        }
+                        title="Remove from wishlist"
+                      />
+                    </div>
+
+                    {/* Points display */}
+                    <div className="flex items-center text-yellow-400 font-semibold text-sm mb-2">
+                      <GiTwoCoins className="mr-1 text-yellow-400 text-base" />
+                      {voucher.points} points
                     </div>
 
                     <p className="text-gray-600 text-xs mb-3 line-clamp-2">

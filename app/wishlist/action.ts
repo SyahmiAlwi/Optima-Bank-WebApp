@@ -5,25 +5,30 @@ import { supabaseBrowser } from "@/lib/supabase/client";
 // Fetch current logged-in user and their profile (including total_points)
 export const getUser = async () => {
   const supabase = supabaseBrowser();
+  
   // Get user from auth
   const {
     data: { user },
     error,
   } = await supabase.auth.getUser();
+  
   if (error || !user) {
     console.error("Error fetching user:", error);
     return null;
   }
+  
   // Fetch user profile from 'profiles' table
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("id, email, totalpoints")
     .eq("id", user.id)
     .single();
+    
   if (profileError || !profile) {
     console.error("Error fetching profile:", profileError);
     return null;
   }
+  
   // Return the relevant profile info
   return {
     id: profile.id,
@@ -64,8 +69,58 @@ export const fetchWishlistItems = async (userId: string) => {
   return data || [];
 };
 
-// Remove from wishlist functionality
-export const removeFromWishlist = async (wishlistId: number) => {
+// Fetch all wishlist vouchers (alternative method)
+export const fetchWishlistVouchers = async () => {
+  const supabase = supabaseBrowser();
+  
+  // Get current user
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from("wishlist")
+    .select(`
+      voucher:voucher_id (
+        id,
+        title,
+        description,
+        points,
+        image,
+        category_id,
+        terms
+      )
+    `)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Error fetching wishlist vouchers:", error);
+    return [];
+  }
+
+  // Return the voucher data from the nested relationship
+  return data?.map((item: any) => item.voucher).filter(Boolean) || [];
+};
+
+// Remove from wishlist functionality (by wishlist ID)
+export const removeFromWishlist = async (userId: string, voucherId: number) => {
+  const supabase = supabaseBrowser();
+
+  const { error } = await supabase
+    .from("wishlist")
+    .delete()
+    .eq("user_id", userId)
+    .eq("voucher_id", voucherId);
+
+  if (error) {
+    console.error("Error removing from wishlist:", error);
+    return { success: false, message: "Error removing from wishlist" };
+  }
+
+  return { success: true, message: "Item removed from wishlist" };
+};
+
+// Remove from wishlist by wishlist item ID (alternative method)
+export const removeFromWishlistById = async (wishlistId: number) => {
   const supabase = supabaseBrowser();
 
   const { error } = await supabase
@@ -79,6 +134,41 @@ export const removeFromWishlist = async (wishlistId: number) => {
   }
 
   return { success: true, message: "Item removed from wishlist" };
+};
+
+// Add to wishlist functionality
+export const addToWishlist = async (userId: string, voucherId: number) => {
+  const supabase = supabaseBrowser();
+
+  // Check if item already exists in wishlist
+  const { data: existingItem, error: checkError } = await supabase
+    .from("wishlist")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("voucher_id", voucherId)
+    .single();
+
+  if (checkError && checkError.code !== "PGRST116") {
+    console.error("Error checking wishlist:", checkError);
+    return { success: false, message: "Error checking wishlist" };
+  }
+
+  if (existingItem) {
+    return { success: false, message: "Item already in wishlist" };
+  }
+
+  // Add new item to wishlist
+  const { error: insertError } = await supabase.from("wishlist").insert({
+    user_id: userId,
+    voucher_id: voucherId,
+  });
+
+  if (insertError) {
+    console.error("Error adding to wishlist:", insertError);
+    return { success: false, message: "Error adding to wishlist" };
+  }
+
+  return { success: true, message: "Item added to wishlist" };
 };
 
 // Add to cart functionality
@@ -163,7 +253,7 @@ export const redeemVoucher = async (
       return { success: false, message: "Error updating user points" };
     }
 
-    // Record the redemption
+    // Record the redemption (with error handling for missing table)
     const { error: redemptionError } = await supabase
       .from("redemptions")
       .insert({
@@ -174,13 +264,21 @@ export const redeemVoucher = async (
       });
 
     if (redemptionError) {
-      // Rollback points if redemption recording fails
-      await supabase
-        .from("profiles")
-        .update({ totalpoints: profile.totalpoints })
-        .eq("id", userId);
-
-      return { success: false, message: "Error recording redemption" };
+      console.error("Error recording redemption:", redemptionError);
+      
+      // Don't rollback if it's just a table not found error
+      if (redemptionError.code !== "42P01") {
+        // Rollback points if redemption recording fails for other reasons
+        await supabase
+          .from("profiles")
+          .update({ totalpoints: profile.totalpoints })
+          .eq("id", userId);
+        
+        return { success: false, message: "Error recording redemption" };
+      }
+      
+      // Continue if redemptions table doesn't exist
+      console.log("Redemptions table not found, continuing without recording");
     }
 
     return {
@@ -192,4 +290,48 @@ export const redeemVoucher = async (
     console.error("Redeem error:", error);
     return { success: false, message: "An unexpected error occurred" };
   }
+};
+
+// Move item from wishlist to cart
+export const moveToCart = async (userId: string, voucherId: number) => {
+  const supabase = supabaseBrowser();
+
+  try {
+    // Add to cart
+    const cartResult = await addToCart(userId, voucherId);
+    
+    if (cartResult.success) {
+      // Remove from wishlist if successfully added to cart
+      const wishlistResult = await removeFromWishlist(userId, voucherId);
+      
+      if (wishlistResult.success) {
+        return { success: true, message: "Item moved to cart" };
+      } else {
+        // Item was added to cart but couldn't be removed from wishlist
+        return { success: true, message: "Item added to cart (still in wishlist)" };
+      }
+    }
+    
+    return cartResult;
+  } catch (error) {
+    console.error("Error moving to cart:", error);
+    return { success: false, message: "Error moving item to cart" };
+  }
+};
+
+// Clear all wishlist items for a user
+export const clearWishlist = async (userId: string) => {
+  const supabase = supabaseBrowser();
+
+  const { error } = await supabase
+    .from("wishlist")
+    .delete()
+    .eq("user_id", userId);
+
+  if (error) {
+    console.error("Error clearing wishlist:", error);
+    return { success: false, message: "Error clearing wishlist" };
+  }
+
+  return { success: true, message: "Wishlist cleared successfully" };
 };
