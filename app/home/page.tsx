@@ -70,9 +70,7 @@ export default function HomePage() {
 
   // Toggle wishlist add/remove
   const toggleWishlist = async (voucherId: number, voucherTitle: string) => {
-    if (!user) return router.push("/auth");
-
-    const supabase = supabaseBrowser();
+    if (!user?.id) return router.push("/auth");
 
     if (wishlistIds.includes(voucherId)) {
       // Remove from wishlist
@@ -355,13 +353,17 @@ export default function HomePage() {
                       {isInWishlist ? (
                         <FaHeart
                           className="text-red-500 cursor-pointer text-xl transition-transform transform hover:scale-110"
-                          onClick={() => toggleWishlist(voucher.id, voucher.title)}
+                          onClick={() =>
+                            toggleWishlist(voucher.id, voucher.title)
+                          }
                           title="Remove from wishlist"
                         />
                       ) : (
                         <FaRegHeart
                           className="text-gray-500 cursor-pointer text-xl hover:text-red-500 transition-transform transform hover:scale-110"
-                          onClick={() => toggleWishlist(voucher.id, voucher.title)}
+                          onClick={() =>
+                            toggleWishlist(voucher.id, voucher.title)
+                          }
                           title="Add to wishlist"
                         />
                       )}

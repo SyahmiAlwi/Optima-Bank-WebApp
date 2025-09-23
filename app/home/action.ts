@@ -211,6 +211,24 @@ export const redeemVoucher = async (
   }
 };
 
+// Remove from wishlist functionality
+export const removeFromWishlist = async (userId: string, voucherId: number) => {
+  const supabase = supabaseBrowser();
+
+  const { error } = await supabase
+    .from("wishlist")
+    .delete()
+    .eq("user_id", userId)
+    .eq("voucher_id", voucherId);
+
+  if (error) {
+    console.error("Error removing from wishlist:", error);
+    return { success: false, message: "Error removing from wishlist" };
+  }
+
+  return { success: true, message: "Item removed from wishlist" };
+};
+
 // Sign out user
 export const signOutUser = async () => {
   const supabase = supabaseBrowser();
