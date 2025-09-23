@@ -7,20 +7,24 @@ import { Navbar } from "@/components/ui/navbar";
 import { GiTwoCoins } from "react-icons/gi";
 import {
   FaHeart,
+  FaRegHeart,
   FaShoppingCart,
   FaBasketballBall,
   FaUtensils,
   FaFilm,
 } from "react-icons/fa";
 import { getUser, fetchVouchers } from "./action";
+import { supabaseBrowser } from "@/lib/supabase/client";
 
 export default function HomePage() {
-  const [user, setUser] = useState<{ email?: string; totalpoints?: number } | null>(null);
+  const [user, setUser] = useState<{ id?: string; email?: string; totalpoints?: number } | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState("All");
   const [vouchers, setVouchers] = useState<any[]>([]);
-  const [promoIndex, setPromoIndex] = useState(0);
-  const [searchTerm, setSearchTerm] = useState(""); // ✅ search state
+  const [wishlistIds, setWishlistIds] = useState<number[]>([]); // ✅ store wishlist voucher IDs
+  const [searchTerm, setSearchTerm] = useState("");
   const router = useRouter();
 
   // Fetch user
@@ -34,14 +38,48 @@ export default function HomePage() {
     loadUser();
   }, [router]);
 
-  // Fetch vouchers
+  // Fetch vouchers + wishlist
   useEffect(() => {
-    const loadVouchers = async () => {
-      const data = await fetchVouchers();
-      setVouchers(data);
+    const loadData = async () => {
+      const vouchersData = await fetchVouchers();
+      setVouchers(vouchersData);
+
+      if (user?.id) {
+        const supabase = supabaseBrowser();
+        const { data } = await supabase
+          .from("wishlist")
+          .select("voucher_id")
+          .eq("user_id", user.id);
+
+        setWishlistIds(data?.map((item) => item.voucher_id) || []);
+      }
     };
-    loadVouchers();
-  }, []);
+    loadData();
+  }, [user]);
+
+  // ✅ Toggle wishlist add/remove
+  const toggleWishlist = async (voucherId: number) => {
+    if (!user) return router.push("/auth");
+
+    const supabase = supabaseBrowser();
+
+    if (wishlistIds.includes(voucherId)) {
+      // remove from wishlist
+      await supabase
+        .from("wishlist")
+        .delete()
+        .eq("voucher_id", voucherId)
+        .eq("user_id", user.id);
+      setWishlistIds((prev) => prev.filter((id) => id !== voucherId));
+    } else {
+      // add to wishlist
+      await supabase.from("wishlist").insert({
+        user_id: user.id,
+        voucher_id: voucherId,
+      });
+      setWishlistIds((prev) => [...prev, voucherId]);
+    }
+  };
 
   if (loading) {
     return (
@@ -56,10 +94,6 @@ export default function HomePage() {
 
   if (!user) return null;
 
-  const userPoints = user.totalpoints ?? 0;
-  const redeemableVouchers = vouchers.filter((voucher) => voucher.points <= userPoints);
-  const promoVouchers = redeemableVouchers.sort((a, b) => b.points - a.points);
-
   const filteredVouchers =
     activeCategory === "All"
       ? vouchers
@@ -70,13 +104,9 @@ export default function HomePage() {
           return true;
         });
 
-  // ✅ Apply search filter
   const searchedVouchers = filteredVouchers.filter((voucher) =>
     voucher.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const handlePrev = () => setPromoIndex((prev) => Math.max(prev - 1, 0));
-  const handleNext = () => setPromoIndex((prev) => Math.min(prev + 1, promoVouchers.length - 1));
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -110,112 +140,55 @@ export default function HomePage() {
 
         {/* Main Content */}
         <main className="flex-1 p-6">
-          <h2 className="text-xl font-semibold mb-4">{activeCategory} Vouchers</h2>
-
           {/* Search Bar */}
-            <div className="mb-6 flex justify-center">
-              <input
-                type="text"
-                placeholder="Search vouchers..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full max-w-2xl px-4 py-2 border rounded-lg shadow-sm focus:ring-2 focus:ring-[#512da8] focus:outline-none"
-              />
-            </div>
-
-
-          {/* Carousel */}
-          {activeCategory === "All" && promoVouchers.length > 0 && searchTerm === "" && (
-            <div className="w-full flex flex-col items-center py-6 mb-6">
-              <div
-                className="relative bg-gradient-to-r from-yellow-200 to-purple-200 rounded-xl shadow-lg flex items-center mb-6"
-                style={{ width: "700px", minHeight: "190px", padding: "24px 32px", boxSizing: "border-box" }}
-              >
-                {/* Left Button */}
-                <button
-                  onClick={handlePrev}
-                  disabled={promoIndex === 0}
-                  className="absolute left-[-22px] top-1/2 transform -translate-y-1/2 text-2xl bg-white rounded-full shadow border border-gray-200 hover:bg-yellow-100 disabled:opacity-50 w-11 h-11 flex items-center justify-center"
-                >
-                  &#8592;
-                </button>
-
-                {/* Voucher Content */}
-                <div className="flex items-center gap-6 w-full">
-                  <div className="w-60 h-28 rounded-2xl overflow-hidden flex-shrink-0 bg-white">
-                    <img
-                      src={`/images/${promoVouchers[promoIndex].image || "default.jpg"}`}
-                      alt={promoVouchers[promoIndex].title}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="flex flex-col items-center justify-center flex-1 ml-2 text-center">
-                    <h3 className="text-xl font-bold text-[#512da8] mb-1">{promoVouchers[promoIndex].title}</h3>
-                    <div className="flex items-center justify-center text-yellow-500 font-semibold text-lg mb-3">
-                      <GiTwoCoins className="mr-2" />
-                      {promoVouchers[promoIndex].points} points
-                    </div>
-                    <Button
-                      className="bg-yellow-400 text-[#512da8] font-bold px-4 py-2 text-base shadow-lg rounded-lg w-40"
-                      onClick={() => router.push(`/voucherdetails?id=${promoVouchers[promoIndex].id}`)}
-                    >
-                      Redeem Now
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Right Button */}
-                <button
-                  onClick={handleNext}
-                  disabled={promoIndex === promoVouchers.length - 1}
-                  className="absolute right-[-22px] top-1/2 transform -translate-y-1/2 text-2xl bg-white rounded-full shadow border border-gray-200 hover:bg-yellow-100 disabled:opacity-50 w-11 h-11 flex items-center justify-center"
-                >
-                  &#8594;
-                </button>
-              </div>
-              <div className="flex items-center justify-center">
-                <span className="text-base font-bold text-[#512da8] drop-shadow">
-                  {promoIndex + 1} / {promoVouchers.length} vouchers you can redeem
-                </span>
-              </div>
-            </div>
-          )}
+          <div className="mb-6 flex justify-center">
+            <input
+              type="text"
+              placeholder="Search vouchers..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full max-w-2xl px-4 py-2 border rounded-lg shadow-sm focus:ring-2 focus:ring-[#512da8] focus:outline-none"
+            />
+          </div>
 
           {/* Voucher grid */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {searchedVouchers.length > 0 ? (
-              searchedVouchers.map((voucher, index) => (
-                <div key={index} className="bg-white rounded-lg shadow-md p-4">
-                  <img
-                    src={`/images/${voucher.image || "default.jpg"}`}
-                    alt={voucher.title}
-                    className="w-full h-32 object-cover rounded-md mb-3 cursor-pointer"
-                    onClick={() => router.push(`/voucherdetails?id=${voucher.id}`)}
-                  />
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold text-gray-800">{voucher.title}</h3>
-                    <span className="flex items-center text-yellow-400 font-semibold text-sm">
-                      <GiTwoCoins className="mr-1 text-yellow-400 text-base" />
-                      {voucher.points}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center mt-3">
-                    <Button
-                      className="bg-[#512da8] text-white px-3 py-1 text-sm"
-                      onClick={() => alert(`Redeemed: ${voucher.title}`)}
-                    >
-                      Redeem
-                    </Button>
-                    <div className="flex space-x-3 text-gray-600 text-lg">
-                      <FaHeart className="cursor-pointer hover:text-red-500" onClick={() => router.push("/wishlist")} />
-                      <FaShoppingCart className="cursor-pointer hover:text-[#512da8]" onClick={() => alert(`Added ${voucher.title} to cart`)} />
-                    </div>
-                  </div>
+            {searchedVouchers.map((voucher) => (
+              <div key={voucher.id} className="bg-white rounded-lg shadow-md p-4">
+                <img
+                  src={`/images/${voucher.image || "default.jpg"}`}
+                  alt={voucher.title}
+                  className="w-full h-32 object-cover rounded-md mb-3 cursor-pointer"
+                  onClick={() => router.push(`/voucherdetails?id=${voucher.id}`)}
+                />
+
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-semibold text-gray-800">{voucher.title}</h3>
+                  {/* Heart toggle */}
+                  {wishlistIds.includes(voucher.id) ? (
+                    <FaHeart
+                      className="text-red-500 cursor-pointer text-2xl transition-transform transform hover:scale-110"
+                      onClick={() => toggleWishlist(voucher.id)}
+                    />
+                  ) : (
+                    <FaRegHeart
+                      className="text-gray-500 cursor-pointer text-2xl hover:text-red-500 transition-transform transform hover:scale-110"
+                      onClick={() => toggleWishlist(voucher.id)}
+                    />
+                  )}
                 </div>
-              ))
-            ) : (
-              <p className="text-gray-500">No vouchers found</p>
-            )}
+
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center text-yellow-500 font-semibold text-sm">
+                    <GiTwoCoins className="mr-1" /> {voucher.points}
+                  </span>
+                  <FaShoppingCart
+                    className="cursor-pointer hover:text-[#512da8] text-lg"
+                    onClick={() => alert(`Added ${voucher.title} to cart`)}
+                  />
+                </div>
+              </div>
+            ))}
           </div>
         </main>
       </div>
