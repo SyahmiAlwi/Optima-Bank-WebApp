@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import PageTransition from "@/components/ui/PageTransition";
+import NoupeInline from "@/components/NoupeInline";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,6 +38,7 @@ export default function RootLayout({
         <PageTransition>
           {children}
         </PageTransition>
+        <NoupeInline />
       </body>
     </html>
   );
