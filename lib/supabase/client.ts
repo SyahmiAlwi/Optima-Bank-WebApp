@@ -1,9 +1,14 @@
-import { createClient } from "@supabase/supabase-js";
+// ⛳️ replace your current supabaseBrowser() with this
+import { createBrowserClient } from "@supabase/ssr";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
-export const supabaseBrowser = () =>
-  createClient(
+let _client: SupabaseClient | null = null;
+
+export const supabaseBrowser = () => {
+  if (_client) return _client;
+  _client = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
-
-
+  return _client;
+};
