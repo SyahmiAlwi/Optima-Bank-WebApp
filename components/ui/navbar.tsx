@@ -35,22 +35,7 @@ export function Navbar({ user }: { user?: { totalpoints?: number } }) {
         >
           Home
         </button>
-        <button
-          onClick={() => router.push("/rewards")}
-          className={`${
-            isActive("/rewards") ? "text-yellow-300 font-bold" : "text-white"
-          } hover:text-yellow-300`}
-        >
-          Rewards
-        </button>
-        <button
-          onClick={() => router.push("/vouchers")}
-          className={`${
-            isActive("/vouchers") ? "text-yellow-300 font-bold" : "text-white"
-          } hover:text-yellow-300`}
-        >
-          Voucher
-        </button>
+        {/* Removed Rewards and Voucher tabs per request */}
         <button
           onClick={() => router.push("/wishlist")}
           className={`flex items-center space-x-1 ${
