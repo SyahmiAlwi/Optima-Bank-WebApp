@@ -4,6 +4,7 @@ import Benefits from "@/components/landing/Benefits";
 import SocialProof from "@/components/landing/SocialProof";
 import Security from "@/components/landing/Security";
 import ShaderBackground from "@/components/landing/ShaderBackground";
+import NoupeInline from "@/components/NoupeInline";
 
 export default function Page() {
 	return (
@@ -16,6 +17,8 @@ export default function Page() {
 				<Security />
 				<SocialProof />
 			</ShaderBackground>
+			{/* Inline Noupe embed (no overlay) */}
+			<NoupeInline />
 		</main>
 	);
 }

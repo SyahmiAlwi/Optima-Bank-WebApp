@@ -81,6 +81,9 @@ export default function Hero() {
 					>
 						Open an account in minutes, track spending effortlessly, and save on fees—secured by bank-grade protection.
 					</motion.p>
+					<p className="mt-2 text-[11px] text-gray-300">
+						Public FAQ only. Don’t share account numbers, OTP, PIN, CVV, or full IC. For account help, use Talk to a human.
+					</p>
                             <motion.div
                                 className="mt-8 flex flex-wrap items-center justify-center gap-3"
                                 initial={{ opacity: 0, y: 30 }}

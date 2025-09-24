@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <!-- Strict CSP: only allow Noupe scripts, images from https, inline styles for basic layout, and block embedding elsewhere -->
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'none'; script-src https://www.noupe.com https://noupe.com; connect-src https:; img-src https: data:; style-src 'unsafe-inline' https:; font-src https: data:; frame-src https://www.noupe.com https://noupe.com; worker-src https: blob:; frame-ancestors 'self'">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Optima FAQ Bot (Sandbox)</title>
+    <style>
+      html, body { margin:0; padding:0; height:100%; background: transparent; }
+      *, *::before, *::after { box-sizing: border-box; }
+      #bot { height:100%; }
+      /* Attempt to remove vendor default top spacing */
+      #bot > * { height:100% !important; margin:0 !important; padding:0 !important; }
+    </style>
+  </head>
+  <body>
+    <div id="bot"></div>
+    <!-- Replace the ID below if you rotate your Noupe bot -->
+    <script src="https://www.noupe.com/embed/019975c14f3a726a95bf63ba53f95daa7dea.js"></script>
+  </body>
+  </html>
+
+
