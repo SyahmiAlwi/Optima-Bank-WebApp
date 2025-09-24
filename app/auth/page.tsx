@@ -72,17 +72,45 @@ export default function AuthPage() {
   };
 
   const handleSignUp = async (values: z.infer<typeof signUpSchema>) => {
-    const { error } = await supabase.auth.signUp({
-      email: values.email,
-      password: values.password,
-      options: { data: { username: values.username } },
-    });
-    if (error) {
-      toast.error(error.message);
-      return;
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: values.email,
+        password: values.password,
+        options: { data: { username: values.username } },
+      });
+
+      if (error) {
+        const msg = (error.message || "").toLowerCase();
+        if (msg.includes("duplicate") && msg.includes("username")) {
+          toast.error("Username already taken. Please choose a different one.");
+        } else if (msg.includes("duplicate") && msg.includes("email")) {
+          toast.error("Email already in use. Try signing in instead.");
+        } else if (msg.includes("null value in column")) {
+          toast.error("Please fill in all required fields.");
+        } else {
+          toast.error("Could not create account. Please try again.");
+        }
+        return;
+      }
+
+      // Safety net: ensure profile exists (in case DB trigger didn’t run)
+      try {
+        const userId = data.user?.id;
+        const email = data.user?.email ?? values.email;
+        if (userId && email) {
+          await supabase
+            .from("profiles")
+            .upsert({ id: userId, email, username: values.username }, { onConflict: "id" });
+        }
+      } catch {
+        // ignore; trigger likely handled it
+      }
+
+      toast.success("Account created!");
+      router.push("/home");
+    } catch (e) {
+      toast.error("Unexpected error. Please try again.");
     }
-    toast.success("Account created!");
-    router.push("/home");
   };
 
   const handleGoogleAuth = async () => {
@@ -109,7 +137,7 @@ export default function AuthPage() {
 
   return (
     <div className="h-svh flex items-center justify-center bg-gradient-to-br from-white via-brand-gray/30 to-brand-gray/60 p-2 sm:p-4">
-      <Toaster />
+      <Toaster position="top-center" />
       <div className={`relative w-full ${useOverlayLayout ? 'max-w-[900px]' : 'max-w-[400px]'} min-h-[480px] mx-auto overflow-hidden rounded-[30px] shadow-card bg-white`}>
         {/* Logo */}
         <div className="absolute top-4 left-4 z-40">

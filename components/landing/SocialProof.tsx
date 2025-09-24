@@ -33,7 +33,7 @@ function AnimatedCounter({ end, duration = 2 }: { end: number; duration?: number
 
 export default function SocialProof() {
 	return (
-		<section className="min-h-screen flex items-center justify-center mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+    <section id="testimonials" className="min-h-screen flex items-center justify-center mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
 			<div className="grid lg:grid-cols-2 gap-12 items-center w-full">
 				<motion.div
 					className="text-left"

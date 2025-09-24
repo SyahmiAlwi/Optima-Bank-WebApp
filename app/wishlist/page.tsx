@@ -157,7 +157,7 @@ export default function WishlistPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Toaster />
+      <Toaster position="top-center" />
       <Navbar user={user ?? undefined} />
 
       <div className="flex-1 p-6">

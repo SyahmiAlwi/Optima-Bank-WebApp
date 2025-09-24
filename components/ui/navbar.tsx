@@ -52,19 +52,7 @@ export function Navbar({ user }: { user?: { id?: string; totalpoints?: number } 
         >
           Home
         </button>
-        <button
-          onClick={() => router.push("/rewards")}
-          className={`${isActive("/rewards") ? "text-yellow-300 font-bold" : "text-white"} hover:text-yellow-300`}
-        >
-          Rewards
-        </button>
-        {/* NOTE: pick ONE route: /voucher OR /vouchers and use it everywhere */}
-        <button
-          onClick={() => router.push("/voucher")}
-          className={`${isActive("/voucher") ? "text-yellow-300 font-bold" : "text-white"} hover:text-yellow-300`}
-        >
-          Voucher
-        </button>
+        {/* Removed Rewards and Voucher tabs per request */}
         <button
           onClick={() => router.push("/wishlist")}
           className={`flex items-center space-x-1 ${isActive("/wishlist") ? "text-yellow-300 font-bold" : "text-white"} hover:text-yellow-300`}
@@ -102,41 +90,41 @@ export function Navbar({ user }: { user?: { id?: string; totalpoints?: number } 
               className="absolute right-0 mt-2 w-44 bg-white border rounded-md shadow-lg z-10 overflow-hidden"
             >
               {isAuthed ? (
-  <>
-    <button
-      className="w-full text-left px-4 py-2 hover:bg-gray-100"
-      onClick={() => {
-        router.push("/profile"); // ✅ go to profile when signed in
-        setProfileOpen(false);
-      }}
-      role="menuitem"
-    >
-      User Profile
-    </button>
-    <button
-      className="w-full text-left px-4 py-2 hover:bg-gray-100"
-      onClick={async () => {
-        await signOutUser();
-        router.push("/auth"); // ✅ send to sign-in after logout
-        setProfileOpen(false);
-      }}
-      role="menuitem"
-    >
-      Log Out
-    </button>
-  </>
-) : (
-  <button
-    className="w-full text-left px-4 py-2 hover:bg-gray-100"
-    onClick={() => {
-      router.push("/auth"); // ✅ show sign-in if not logged in
-      setProfileOpen(false);
-    }}
-    role="menuitem"
-  >
-    Sign In
-  </button>
-)}
+                <>
+                  <button
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                    onClick={() => {
+                      router.push("/profile"); // go to profile when signed in
+                      setProfileOpen(false);
+                    }}
+                    role="menuitem"
+                  >
+                    User Profile
+                  </button>
+                  <button
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                    onClick={async () => {
+                      await signOutUser();
+                      router.push("/auth"); // send to sign-in after logout
+                      setProfileOpen(false);
+                    }}
+                    role="menuitem"
+                  >
+                    Log Out
+                  </button>
+                </>
+              ) : (
+                <button
+                  className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                  onClick={() => {
+                    router.push("/auth"); // show sign-in if not logged in
+                    setProfileOpen(false);
+                  }}
+                  role="menuitem"
+                >
+                  Sign In
+                </button>
+              )}
             </div>
           )}
         </div>
