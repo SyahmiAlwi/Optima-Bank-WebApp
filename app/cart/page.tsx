@@ -11,6 +11,7 @@ import {
   FaFilm,
   FaTrash,
   FaDownload,
+  FaExclamationTriangle,
 } from "react-icons/fa";
 import {
   getUser,
@@ -47,6 +48,7 @@ export default function CartPage() {
   const [selectAll, setSelectAll] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<number | null>(null);
+  const [showCheckoutConfirm, setShowCheckoutConfirm] = useState(false);
   const router = useRouter();
   const [checkoutSuccess, setCheckoutSuccess] = useState(false);
   const [redeemedVouchers, setRedeemedVouchers] = useState<
@@ -92,28 +94,30 @@ export default function CartPage() {
         console.log("Raw cart data:", data); // Debug log
 
         // Handle the response data and normalize it
-        const itemsWithSelection: CartItem[] = (data || []).map((item: Record<string, unknown>) => {
-          // Handle case where voucher might be an array or object
-          let voucherData;
-          if (Array.isArray(item.voucher)) {
-            voucherData = item.voucher[0]; // Take first element if array
-          } else {
-            voucherData = item.voucher;
-          }
+        const itemsWithSelection: CartItem[] = (data || []).map(
+          (item: Record<string, unknown>) => {
+            // Handle case where voucher might be an array or object
+            let voucherData;
+            if (Array.isArray(item.voucher)) {
+              voucherData = item.voucher[0]; // Take first element if array
+            } else {
+              voucherData = item.voucher;
+            }
 
-          return {
-            id: Number(item.id),
-            quantity: Number(item.quantity),
-            voucher: {
-              id: Number(voucherData?.id),
-              title: String(voucherData?.title || ""),
-              description: String(voucherData?.description || ""),
-              points: Number(voucherData?.points || 0),
-              image: String(voucherData?.image || ""),
-            },
-            selected: false,
-          };
-        });
+            return {
+              id: Number(item.id),
+              quantity: Number(item.quantity),
+              voucher: {
+                id: Number(voucherData?.id),
+                title: String(voucherData?.title || ""),
+                description: String(voucherData?.description || ""),
+                points: Number(voucherData?.points || 0),
+                image: String(voucherData?.image || ""),
+              },
+              selected: false,
+            };
+          }
+        );
 
         setCartItems(itemsWithSelection);
       }
@@ -133,15 +137,54 @@ export default function CartPage() {
     );
   };
 
-  // Toggle select all (only for affordable items after checkout)
+  // Smart select function - selects items that can be afforded
+  const smartSelect = () => {
+    const userPoints = user?.totalpoints ?? 0;
+
+    // Sort items by points (ascending) to prioritize cheaper items
+    const sortedItems = [...cartItems].sort(
+      (a, b) => a.quantity * a.voucher.points - b.quantity * b.voucher.points
+    );
+
+    let remainingPoints = userPoints;
+    const newCartItems = cartItems.map((item) => ({
+      ...item,
+      selected: false,
+    }));
+
+    // Select items that can be afforded
+    for (const sortedItem of sortedItems) {
+      const itemCost = sortedItem.quantity * sortedItem.voucher.points;
+      if (itemCost <= remainingPoints) {
+        const itemIndex = newCartItems.findIndex(
+          (item) => item.id === sortedItem.id
+        );
+        if (itemIndex !== -1) {
+          newCartItems[itemIndex].selected = true;
+          remainingPoints -= itemCost;
+        }
+      }
+    }
+
+    setCartItems(newCartItems);
+
+    const selectedCount = newCartItems.filter((item) => item.selected).length;
+    if (selectedCount > 0) {
+      toast.success(`Selected ${selectedCount} affordable item(s)`, {
+        duration: 3000,
+        position: "top-center",
+      });
+    } else {
+      toast.error("No items can be afforded with current points", {
+        duration: 3000,
+        position: "top-center",
+      });
+    }
+  };
+
+  // Toggle select all (only for affordable items)
   const toggleSelectAll = () => {
     const userPoints = user?.totalpoints ?? 0;
-    const selectedItems = cartItems.filter((item) => item.selected);
-    const totalSelectedPoints = selectedItems.reduce(
-      (acc, item) => acc + item.quantity * item.voucher.points,
-      0
-    );
-    const pointsAfterCheckout = userPoints - totalSelectedPoints;
 
     if (selectAll) {
       // Unselect all
@@ -150,20 +193,26 @@ export default function CartPage() {
         prev.map((item) => ({ ...item, selected: false }))
       );
     } else {
-      // Select all affordable items
-      setSelectAll(true);
-      setCartItems((prev) =>
-        prev.map((item) => {
-          // Can only select items that can be afforded with current points
-          const canAfford = item.quantity * item.voucher.points <= userPoints;
-          return { ...item, selected: canAfford };
-        })
+      // Check if user can afford all items
+      const totalAllPoints = cartItems.reduce(
+        (acc, item) => acc + item.quantity * item.voucher.points,
+        0
       );
+
+      if (totalAllPoints <= userPoints) {
+        // Can afford all - select all
+        setSelectAll(true);
+        setCartItems((prev) =>
+          prev.map((item) => ({ ...item, selected: true }))
+        );
+      } else {
+        // Can't afford all - use smart select
+        smartSelect();
+      }
     }
   };
 
   // Update select all state when individual items change
-  // Fix: Use user object instead of user?.totalpoints to maintain consistent dependency array
   useEffect(() => {
     const userPoints = user?.totalpoints ?? 0;
     const affordableItems = cartItems.filter(
@@ -173,7 +222,7 @@ export default function CartPage() {
       affordableItems.length > 0 &&
       affordableItems.every((item) => item.selected);
     setSelectAll(allAffordableSelected);
-  }, [cartItems, user]); // Changed from [cartItems, user?.totalpoints] to [cartItems, user]
+  }, [cartItems, user]);
 
   // Update quantity (both frontend and backend)
   const updateQuantity = async (cartId: number, change: number) => {
@@ -268,8 +317,43 @@ export default function CartPage() {
     setShowClearConfirm(false);
   };
 
+  // Show checkout confirmation
+  const showCheckoutConfirmation = () => {
+    const selectedItems = cartItems.filter((item) => item.selected);
+
+    if (selectedItems.length === 0) {
+      toast.error("Please select items to checkout", {
+        duration: 3000,
+        position: "top-center",
+      });
+      return;
+    }
+
+    const totalPointsNeeded = selectedItems.reduce(
+      (acc, item) => acc + item.quantity * item.voucher.points,
+      0
+    );
+
+    const userPoints = user?.totalpoints ?? 0;
+
+    if (totalPointsNeeded > userPoints) {
+      toast.error(
+        `Insufficient points! You need ${totalPointsNeeded} points but only have ${userPoints}.`,
+        {
+          duration: 5000,
+          position: "top-center",
+        }
+      );
+      return;
+    }
+
+    setShowCheckoutConfirm(true);
+  };
+
   // Handle checkout for selected items
   const handleCheckout = async () => {
+    setShowCheckoutConfirm(false);
+
     // Add null check for user
     if (!user) {
       toast.error("User not found. Please log in again.");
@@ -602,6 +686,53 @@ export default function CartPage() {
         </div>
       )}
 
+      {/* Checkout Confirmation Modal */}
+      {showCheckoutConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md">
+            <div className="flex items-center mb-4">
+              <FaExclamationTriangle className="text-yellow-500 mr-3 text-xl" />
+              <h3 className="text-lg font-semibold">Confirm Checkout</h3>
+            </div>
+            <div className="mb-6">
+              <p className="text-gray-600 mb-3">
+                You are about to redeem {selectedItems.length} voucher(s):
+              </p>
+              <div className="bg-gray-50 p-3 rounded max-h-40 overflow-y-auto">
+                {selectedItems.map((item, index) => (
+                  <div key={index} className="text-sm mb-1">
+                    • {item.voucher.title} (x{item.quantity}) -{" "}
+                    {item.quantity * item.voucher.points} points
+                  </div>
+                ))}
+              </div>
+              <div className="mt-3 pt-3 border-t">
+                <p className="font-semibold text-gray-800">
+                  Total Points: {totalSelectedPoints}
+                </p>
+                <p className="text-sm text-gray-600">
+                  Remaining Points: {pointsAfterCheckout}
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-4">
+              <Button
+                className="bg-[#512da8] text-white hover:bg-[#6a3fe3]"
+                onClick={handleCheckout}
+              >
+                Confirm Checkout
+              </Button>
+              <Button
+                className="bg-gray-300 text-gray-700 hover:bg-gray-400"
+                onClick={() => setShowCheckoutConfirm(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Navbar with totalpoints */}
       <Navbar user={user} />
 
@@ -897,7 +1028,7 @@ export default function CartPage() {
                 )}
                 <Button
                   className="mt-4 w-full bg-[#512da8] text-white hover:bg-[#6a3fe3] disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-                  onClick={handleCheckout}
+                  onClick={showCheckoutConfirmation}
                   disabled={
                     selectedItems.length === 0 ||
                     totalSelectedPoints > (user.totalpoints ?? 0)
