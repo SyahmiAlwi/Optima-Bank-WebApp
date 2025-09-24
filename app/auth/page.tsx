@@ -137,7 +137,7 @@ export default function AuthPage() {
 
   return (
     <div className="h-svh flex items-center justify-center bg-gradient-to-br from-white via-brand-gray/30 to-brand-gray/60 p-2 sm:p-4">
-      <Toaster />
+      <Toaster position="top-center" />
       <div className={`relative w-full ${useOverlayLayout ? 'max-w-[900px]' : 'max-w-[400px]'} min-h-[480px] mx-auto overflow-hidden rounded-[30px] shadow-card bg-white`}>
         {/* Logo */}
         <div className="absolute top-4 left-4 z-40">
