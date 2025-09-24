@@ -8,6 +8,11 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        'brand-red': '#ec1c24',
+        'brand-black': '#1d1d1f',
+        'brand-gray': {
+          500: '#6b7280',
+        },
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         card: {
