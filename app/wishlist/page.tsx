@@ -22,7 +22,7 @@ export default function WishlistPage() {
     totalpoints?: number;
   } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [wishlistItems, setWishlistItems] = useState<any[]>([]);
+  const [wishlistItems, setWishlistItems] = useState<Record<string, unknown>[]>([]);
   const router = useRouter();
 
   // Fetch user
@@ -60,7 +60,7 @@ export default function WishlistPage() {
         position: "top-center",
       });
       // Remove item from local state
-      setWishlistItems((prev) => prev.filter((item) => item.id !== wishlistId));
+      setWishlistItems((prev) => prev.filter((item) => (item.id as number) !== wishlistId));
     } else {
       toast.error(result.message, {
         duration: 4000,
@@ -106,13 +106,14 @@ export default function WishlistPage() {
   };
 
   // Handle redeem functionality
-  const handleRedeem = async (voucher: any) => {
+  const handleRedeem = async (voucher: Record<string, unknown>) => {
     if (!user?.id) return;
 
     const userPoints = user.totalpoints ?? 0;
-    if (userPoints < voucher.points) {
+    const voucherPoints = voucher.points as number;
+    if (userPoints < voucherPoints) {
       toast.error(
-        `Insufficient points! You need ${voucher.points} points but only have ${userPoints}.`,
+        `Insufficient points! You need ${voucherPoints} points but only have ${userPoints}.`,
         {
           duration: 4000,
           position: "top-center",
@@ -121,7 +122,7 @@ export default function WishlistPage() {
       return;
     }
 
-    const result = await redeemVoucher(user.id, voucher.id, voucher.points);
+    const result = await redeemVoucher(user.id, voucher.id as number, voucherPoints);
     if (result.success) {
       toast.success(result.message, {
         duration: 3000,
@@ -178,32 +179,32 @@ export default function WishlistPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {wishlistItems.map((item) => {
-                const voucher = item.voucher;
-                const canRedeem = userPoints >= voucher.points;
+                const voucher = item.voucher as Record<string, unknown>;
+                const canRedeem = userPoints >= (voucher.points as number);
 
                 return (
                   <div
-                    key={item.id}
+                    key={item.id as number}
                     className="bg-white rounded-lg shadow-md p-4"
                   >
                     <img
                       src={`/images/${voucher.image || "default.jpg"}`}
-                      alt={voucher.title}
+                      alt={voucher.title as string}
                       className="w-full h-32 object-cover rounded-md mb-3 cursor-pointer"
                       onClick={() =>
-                        router.push(`/voucherdetails?id=${voucher.id}`)
+                        router.push(`/voucherdetails?id=${voucher.id as number}`)
                       }
                     />
                     
                     {/* Title + Heart icon aligned horizontally */}
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="font-semibold text-gray-800 text-sm flex-1 mr-2">
-                        {voucher.title}
+                        {voucher.title as string}
                       </h3>
                       <FaHeart
                         className="text-red-500 cursor-pointer hover:scale-110 transition-transform text-lg flex-shrink-0"
                         onClick={() =>
-                          handleRemoveFromWishlist(item.id, voucher.title)
+                          handleRemoveFromWishlist(item.id as number, voucher.title as string)
                         }
                         title="Remove from wishlist"
                       />
@@ -212,16 +213,16 @@ export default function WishlistPage() {
                     {/* Points display */}
                     <div className="flex items-center text-yellow-400 font-semibold text-sm mb-2">
                       <GiTwoCoins className="mr-1 text-yellow-400 text-base" />
-                      {voucher.points} points
+                      {voucher.points as number} points
                     </div>
 
                     <p className="text-gray-600 text-xs mb-3 line-clamp-2">
-                      {voucher.description}
+                      {voucher.description as string}
                     </p>
 
                     {!canRedeem && (
                       <p className="text-red-500 text-xs mb-2">
-                        Need {voucher.points - userPoints} more points
+                        Need {(voucher.points as number) - userPoints} more points
                       </p>
                     )}
 
@@ -243,9 +244,9 @@ export default function WishlistPage() {
                           onClick={() =>
                             canRedeem &&
                             handleAddToCart(
-                              voucher.id,
-                              voucher.title,
-                              voucher.points
+                              voucher.id as number,
+                              voucher.title as string,
+                              voucher.points as number
                             )
                           }
                           title={
@@ -257,7 +258,7 @@ export default function WishlistPage() {
                         <FaTrash
                           className="cursor-pointer hover:text-red-500"
                           onClick={() =>
-                            handleRemoveFromWishlist(item.id, voucher.title)
+                            handleRemoveFromWishlist(item.id as number, voucher.title as string)
                           }
                           title="Remove from wishlist"
                         />

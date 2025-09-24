@@ -92,7 +92,7 @@ export default function CartPage() {
         console.log("Raw cart data:", data); // Debug log
 
         // Handle the response data and normalize it
-        const itemsWithSelection: CartItem[] = (data || []).map((item: any) => {
+        const itemsWithSelection: CartItem[] = (data || []).map((item: Record<string, unknown>) => {
           // Handle case where voucher might be an array or object
           let voucherData;
           if (Array.isArray(item.voucher)) {

@@ -1,3 +1,10 @@
+
+
+
+
+
+
+
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
@@ -32,22 +39,22 @@ export async function middleware(req: NextRequest) {
     data: { session },
   } = await supabase.auth.getSession()
 
-  // Protect /home route - redirect to auth if not logged in
-  if (req.nextUrl.pathname.startsWith('/home')) {
-    if (!session) {
-      return NextResponse.redirect(new URL('/auth', req.url))
-    }
-  }
-
   // Allow OAuth callback to pass through without redirects
   if (req.nextUrl.pathname === '/auth/callback') {
     return response
   }
 
-  // Redirect authenticated users away from auth page
-  if (req.nextUrl.pathname.startsWith('/auth')) {
+  // Redirect authenticated users away from auth page (except callback)
+  if (req.nextUrl.pathname.startsWith('/auth') && req.nextUrl.pathname !== '/auth/callback') {
     if (session) {
       return NextResponse.redirect(new URL('/home', req.url))
+    }
+  }
+
+  // Protect /home route - redirect to auth if not logged in
+  if (req.nextUrl.pathname.startsWith('/home')) {
+    if (!session) {
+      return NextResponse.redirect(new URL('/auth', req.url))
     }
   }
 

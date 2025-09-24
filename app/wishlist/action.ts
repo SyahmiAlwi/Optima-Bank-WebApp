@@ -98,7 +98,7 @@ export const fetchWishlistVouchers = async () => {
   }
 
   // Return the voucher data from the nested relationship
-  return data?.map((item: any) => item.voucher).filter(Boolean) || [];
+  return data?.map((item: Record<string, unknown>) => item.voucher).filter(Boolean) || [];
 };
 
 // Remove from wishlist functionality (by wishlist ID)

@@ -4,6 +4,40 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
+// Function to create user profile if it doesn't exist
+async function createUserProfile(user: { id: string; email?: string }) {
+  try {
+    const supabase = supabaseBrowser();
+    
+    // Check if profile already exists
+    const { data: existingProfile } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("id", user.id)
+      .single();
+    
+    if (!existingProfile) {
+      // Create new profile
+      const { error } = await supabase
+        .from("profiles")
+        .insert({
+          id: user.id,
+          email: user.email,
+          totalpoints: 0, // Default points for new users
+          created_at: new Date().toISOString(),
+        });
+      
+      if (error) {
+        console.error("Error creating user profile:", error);
+      } else {
+        console.log("User profile created successfully");
+      }
+    }
+  } catch (error) {
+    console.error("Error in createUserProfile:", error);
+  }
+}
+
 export default function AuthCallbackPage() {
   const router = useRouter();
   const supabase = supabaseBrowser();
@@ -41,7 +75,14 @@ export default function AuthCallbackPage() {
             }
             
             console.log("Session set successfully:", data);
-            router.replace("/home");
+            // Create user profile if it doesn't exist
+            if (data.user) {
+              await createUserProfile(data.user);
+            }
+            // Small delay to ensure session is properly established
+            setTimeout(() => {
+              router.replace("/home");
+            }, 100);
             return;
           }
         }
@@ -61,7 +102,14 @@ export default function AuthCallbackPage() {
           }
           
           console.log("Code exchange successful:", data);
-          router.replace("/home");
+          // Create user profile if it doesn't exist
+          if (data.user) {
+            await createUserProfile(data.user);
+          }
+          // Small delay to ensure session is properly established
+          setTimeout(() => {
+            router.replace("/home");
+          }, 100);
           return;
         }
 

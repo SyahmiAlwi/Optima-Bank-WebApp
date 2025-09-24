@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -16,13 +16,13 @@ import {
 } from "./action";
 import toast, { Toaster } from "react-hot-toast";
 
-export default function VoucherDetailsPage() {
+function VoucherDetailsContent() {
   const [user, setUser] = useState<{
     id?: string;
     email?: string;
     totalpoints?: number;
   } | null>(null);
-  const [voucher, setVoucher] = useState<any>(null);
+  const [voucher, setVoucher] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
   const [isInWishlist, setIsInWishlist] = useState(false);
   const [checkingWishlist, setCheckingWishlist] = useState(true);
@@ -103,7 +103,7 @@ export default function VoucherDetailsPage() {
   const handleRedeem = async () => {
     if (!user?.id || !voucher) return;
 
-    const result = await redeemVoucher(user.id, voucher.id, voucher.points);
+    const result = await redeemVoucher(user.id, voucher.id as number, voucher.points as number);
     if (result.success) {
       toast.success(result.message, {
         duration: 3000,
@@ -128,9 +128,9 @@ export default function VoucherDetailsPage() {
     const userPoints = user.totalpoints ?? 0;
 
     // Check if user has enough points to redeem the voucher
-    if (userPoints < voucher.points) {
+    if (userPoints < (voucher.points as number)) {
       toast.error(
-        `Cannot add to cart! You need ${voucher.points} points but only have ${userPoints} points.`,
+        `Cannot add to cart! You need ${voucher.points as number} points but only have ${userPoints} points.`,
         {
           duration: 4000,
           position: "top-center",
@@ -139,7 +139,7 @@ export default function VoucherDetailsPage() {
       return;
     }
 
-    const result = await addToCart(user.id, voucher.id);
+    const result = await addToCart(user.id, voucher.id as number);
     if (result.success) {
       toast.success(result.message, {
         duration: 3000,
@@ -165,7 +165,7 @@ export default function VoucherDetailsPage() {
       return;
     }
 
-    const result = await addToWishlist(user.id, voucher.id);
+    const result = await addToWishlist(user.id, voucher.id as number);
     if (result.success) {
       toast.success(result.message, {
         duration: 3000,
@@ -215,7 +215,7 @@ export default function VoucherDetailsPage() {
   };
 
   const userPoints = user?.totalpoints ?? 0;
-  const canRedeem = userPoints >= voucher.points;
+  const canRedeem = userPoints >= (voucher.points as number);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -238,17 +238,17 @@ export default function VoucherDetailsPage() {
           {/* Image */}
           <img
             src={`/images/${voucher.image || "default.jpg"}`}
-            alt={voucher.title}
+            alt={voucher.title as string}
             className="w-full h-64 object-cover rounded-md mb-4"
           />
 
           {/* Title + Category */}
           <div className="flex justify-between items-center mb-2">
             <h1 className="text-2xl font-bold text-gray-800">
-              {voucher.title}
+              {voucher.title as string}
             </h1>
             <span className="text-sm font-medium text-[#512da8] bg-purple-50 px-3 py-1 rounded-full">
-              {categoryMap[voucher.category_id] || "Other"}
+              {categoryMap[voucher.category_id as number] || "Other"}
             </span>
           </div>
 
@@ -256,12 +256,12 @@ export default function VoucherDetailsPage() {
           <div className="flex items-center space-x-2 text-gray-700 mb-4">
             <GiTwoCoins className="text-yellow-500 text-xl" />
             <p className="text-lg">
-              Redeem for <span className="font-semibold">{voucher.points}</span>{" "}
+              Redeem for <span className="font-semibold">{voucher.points as number}</span>{" "}
               points
             </p>
             {!canRedeem && (
               <span className="text-red-500 text-sm ml-4 bg-red-50 px-2 py-1 rounded">
-                Need {voucher.points - userPoints} more points
+                Need {(voucher.points as number) - userPoints} more points
               </span>
             )}
           </div>
@@ -272,7 +272,7 @@ export default function VoucherDetailsPage() {
               Description
             </h3>
             <p className="text-gray-600 leading-relaxed">
-              {voucher.description}
+              {voucher.description as string}
             </p>
           </div>
 
@@ -282,7 +282,7 @@ export default function VoucherDetailsPage() {
               Terms & Conditions
             </h2>
             <p className="text-sm text-gray-600 whitespace-pre-line leading-relaxed">
-              {voucher.terms || "No specific terms available."}
+              {voucher.terms as string || "No specific terms available."}
             </p>
           </div>
 
@@ -346,5 +346,13 @@ export default function VoucherDetailsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function VoucherDetailsPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <VoucherDetailsContent />
+    </Suspense>
   );
 }

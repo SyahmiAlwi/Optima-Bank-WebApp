@@ -32,7 +32,7 @@ export default function HomePage() {
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState("All");
-  const [vouchers, setVouchers] = useState<any[]>([]);
+  const [vouchers, setVouchers] = useState<Record<string, unknown>[]>([]);
   const [wishlistIds, setWishlistIds] = useState<number[]>([]); // Store wishlist voucher IDs
   const [promoIndex, setPromoIndex] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
@@ -41,10 +41,31 @@ export default function HomePage() {
   // Fetch user
   useEffect(() => {
     const loadUser = async () => {
-      const userData = await getUser();
-      setUser(userData);
-      setLoading(false);
-      if (!userData) router.push("/auth");
+      try {
+        const userData = await getUser();
+        if (userData) {
+          setUser(userData);
+          setLoading(false);
+        } else {
+          // If no user data, wait a bit and try again (for new users)
+          console.log("No user data found, retrying in 1 second...");
+          setTimeout(async () => {
+            const retryUserData = await getUser();
+            if (retryUserData) {
+              setUser(retryUserData);
+              setLoading(false);
+            } else {
+              console.log("Still no user data, redirecting to auth");
+              setLoading(false);
+              router.push("/auth");
+            }
+          }, 1000);
+        }
+      } catch (error) {
+        console.error("Error loading user:", error);
+        setLoading(false);
+        router.push("/auth");
+      }
     };
     loadUser();
   }, [router]);
@@ -142,13 +163,14 @@ export default function HomePage() {
   };
 
   // Handle redeem functionality
-  const handleRedeem = async (voucher: any) => {
+  const handleRedeem = async (voucher: Record<string, unknown>) => {
     if (!user?.id) return;
 
     const userPoints = user.totalpoints ?? 0;
-    if (userPoints < voucher.points) {
+    const voucherPoints = voucher.points as number;
+    if (userPoints < voucherPoints) {
       toast.error(
-        `Insufficient points! You need ${voucher.points} points but only have ${userPoints}.`,
+        `Insufficient points! You need ${voucherPoints} points but only have ${userPoints}.`,
         {
           duration: 4000,
           position: "top-center",
@@ -157,7 +179,7 @@ export default function HomePage() {
       return;
     }
 
-    const result = await redeemVoucher(user.id, voucher.id, voucher.points);
+    const result = await redeemVoucher(user.id, voucher.id as number, voucherPoints);
     if (result.success) {
       toast.success(result.message, {
         duration: 3000,
@@ -190,9 +212,9 @@ export default function HomePage() {
 
   const userPoints = user.totalpoints ?? 0;
   const redeemableVouchers = vouchers.filter(
-    (voucher) => voucher.points <= userPoints
+    (voucher) => (voucher.points as number) <= userPoints
   );
-  const promoVouchers = redeemableVouchers.sort((a, b) => b.points - a.points);
+  const promoVouchers = redeemableVouchers.sort((a, b) => (b.points as number) - (a.points as number));
 
   const filteredVouchers =
     activeCategory === "All"
@@ -205,7 +227,7 @@ export default function HomePage() {
         });
 
   const searchedVouchers = filteredVouchers.filter((voucher) =>
-    voucher.title.toLowerCase().includes(searchTerm.toLowerCase())
+    (voucher.title as string).toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handlePrev = () => setPromoIndex((prev) => Math.max(prev - 1, 0));
@@ -286,17 +308,17 @@ export default function HomePage() {
                         src={`/images/${
                           promoVouchers[promoIndex].image || "default.jpg"
                         }`}
-                        alt={promoVouchers[promoIndex].title}
+                        alt={promoVouchers[promoIndex].title as string}
                         className="w-full h-full object-cover"
                       />
                     </div>
                     <div className="flex flex-col items-center justify-center flex-1 ml-2 text-center">
                       <h3 className="text-xl font-bold text-[#512da8] mb-1">
-                        {promoVouchers[promoIndex].title}
+                        {promoVouchers[promoIndex].title as string}
                       </h3>
                       <div className="flex items-center justify-center text-yellow-500 font-semibold text-lg mb-3">
                         <GiTwoCoins className="mr-2" />
-                        {promoVouchers[promoIndex].points} points
+                        {promoVouchers[promoIndex].points as number} points
                       </div>
                       <Button
                         className="bg-yellow-400 text-[#512da8] font-bold px-4 py-2 text-base shadow-lg rounded-lg w-40"
@@ -328,33 +350,33 @@ export default function HomePage() {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {searchedVouchers.length > 0 ? (
               searchedVouchers.map((voucher, index) => {
-                const canRedeem = userPoints >= voucher.points;
-                const isInWishlist = wishlistIds.includes(voucher.id);
+                const canRedeem = userPoints >= (voucher.points as number);
+                const isInWishlist = wishlistIds.includes(voucher.id as number);
 
                 return (
                   <div
-                    key={voucher.id}
+                    key={voucher.id as number}
                     className="bg-white rounded-lg shadow-md p-4"
                   >
                     <img
                       src={`/images/${voucher.image || "default.jpg"}`}
-                      alt={voucher.title}
+                      alt={voucher.title as string}
                       className="w-full h-32 object-cover rounded-md mb-3 cursor-pointer"
                       onClick={() =>
-                        router.push(`/voucherdetails?id=${voucher.id}`)
+                        router.push(`/voucherdetails?id=${voucher.id as number}`)
                       }
                     />
 
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="font-semibold text-gray-800">
-                        {voucher.title}
+                        {voucher.title as string}
                       </h3>
                       {/* Heart toggle with proper wishlist functionality */}
                       {isInWishlist ? (
                         <FaHeart
                           className="text-red-500 cursor-pointer text-xl transition-transform transform hover:scale-110"
                           onClick={() =>
-                            toggleWishlist(voucher.id, voucher.title)
+                            toggleWishlist(voucher.id as number, voucher.title as string)
                           }
                           title="Remove from wishlist"
                         />
@@ -362,7 +384,7 @@ export default function HomePage() {
                         <FaRegHeart
                           className="text-gray-500 cursor-pointer text-xl hover:text-red-500 transition-transform transform hover:scale-110"
                           onClick={() =>
-                            toggleWishlist(voucher.id, voucher.title)
+                            toggleWishlist(voucher.id as number, voucher.title as string)
                           }
                           title="Add to wishlist"
                         />
@@ -372,11 +394,11 @@ export default function HomePage() {
                     <div className="flex items-center justify-between mb-2">
                       <span className="flex items-center text-yellow-400 font-semibold text-sm">
                         <GiTwoCoins className="mr-1 text-yellow-400 text-base" />
-                        {voucher.points}
+                        {voucher.points as number}
                       </span>
                       {!canRedeem && (
                         <p className="text-red-500 text-xs">
-                          Need {voucher.points - userPoints} more
+                          Need {(voucher.points as number) - userPoints} more
                         </p>
                       )}
                     </div>
@@ -398,9 +420,9 @@ export default function HomePage() {
                         onClick={() =>
                           canRedeem &&
                           handleAddToCart(
-                            voucher.id,
-                            voucher.title,
-                            voucher.points
+                            voucher.id as number,
+                            voucher.title as string,
+                            voucher.points as number
                           )
                         }
                         title={
