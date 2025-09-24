@@ -2,6 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -81,5 +82,21 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Restore shimmer animation used by ShimmerButton */
+@layer utilities {
+  @keyframes spin-around {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .animate-spin-around {
+    animation: spin-around var(--speed, 3s) linear infinite;
   }
 }
