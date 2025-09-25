@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { FaHeart, FaShoppingCart } from "react-icons/fa";
 import { GiTwoCoins } from "react-icons/gi";
 import { Navbar } from "@/components/ui/navbar";
+import { resolveVoucherImage } from "@/lib/utils";
 import {
   getUser,
   fetchVouchers,
@@ -237,7 +238,7 @@ function VoucherDetailsContent() {
         <div className="w-full max-w-3xl bg-white rounded-lg shadow-md p-6 mx-auto">
           {/* Image */}
           <img
-            src={`/images/${voucher.image || "default.jpg"}`}
+            src={resolveVoucherImage(voucher.image)}
             alt={voucher.title as string}
             className="w-full h-64 object-cover rounded-md mb-4"
           />
