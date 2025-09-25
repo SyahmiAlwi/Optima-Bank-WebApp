@@ -46,6 +46,16 @@ export const dynamic = "force-dynamic"
 export default async function ProfilePage() {
   const supabase = await supabaseServer()
 
+  type ProfileRow = {
+    username: string | null
+    full_name: string | null
+    email: string | null
+    avatar_url: string | null
+    totalpoints: number | null
+    phone?: string | null
+    about_me?: string | null
+  }
+
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -59,9 +69,11 @@ export default async function ProfilePage() {
     .eq("id", user.id)
     .single()
 
+  const typedProfile: ProfileRow | null = (profile as unknown) as ProfileRow | null
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <PurpleNavbar points={profile?.totalpoints ?? 0} />
+      <PurpleNavbar points={typedProfile?.totalpoints ?? 0} />
 
       <main className="mx-auto w-full max-w-7xl px-6 py-8">
         <h1 className="mb-6 text-2xl font-semibold text-gray-800">Your Profile</h1>
@@ -69,18 +81,17 @@ export default async function ProfilePage() {
         <ProfileForm
           userId={user.id}
           initial={{
-            username: profile?.username ?? "",
-            full_name: profile?.full_name ?? "",
-            email: profile?.email ?? user.email ?? "",
-            avatar_url: profile?.avatar_url ?? null,
-            totalpoints: profile?.totalpoints ?? 0,
+            username: typedProfile?.username ?? "",
+            full_name: typedProfile?.full_name ?? "",
+            email: typedProfile?.email ?? user.email ?? "",
+            avatar_url: typedProfile?.avatar_url ?? null,
+            totalpoints: typedProfile?.totalpoints ?? 0,
             // the next two are used by the wireframe
             // (add these columns if you don't have them yet)
+            phone: typedProfile?.phone ?? "",
             
-            phone: (profile as any)?.phone ?? "",
-           
-            about_me: (profile as any)?.about_me ?? "",
-          } as any}
+            about_me: typedProfile?.about_me ?? "",
+          }}
         />
       </main>
     </div>
