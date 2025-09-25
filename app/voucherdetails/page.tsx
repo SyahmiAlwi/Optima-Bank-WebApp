@@ -30,6 +30,7 @@ function VoucherDetailsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const supabase = supabaseBrowser();
+  
 
   // Fetch user
   useEffect(() => {
@@ -100,6 +101,17 @@ function VoucherDetailsContent() {
     }
   }, [user?.id, voucherId, supabase]);
 
+  // Add state at the top of VoucherDetailsContent
+const [quantity, setQuantity] = useState(1);
+
+const handleDecrease = () => {
+  if (quantity > 1) setQuantity(quantity - 1);
+};
+
+const handleIncrease = () => {
+  setQuantity(quantity + 1);
+};
+
   // Handle redeem
   const handleRedeem = async () => {
     if (!user?.id || !voucher) return;
@@ -123,37 +135,39 @@ function VoucherDetailsContent() {
   };
 
   // Handle add to cart
-  const handleAddToCart = async () => {
-    if (!user?.id || !voucher) return;
+const handleAddToCart = async () => {
+  if (!user?.id || !voucher) return;
 
-    const userPoints = user.totalpoints ?? 0;
+  const userPoints = user.totalpoints ?? 0;
+  const requiredPoints = (voucher.points as number) * quantity;
 
-    // Check if user has enough points to redeem the voucher
-    if (userPoints < (voucher.points as number)) {
-      toast.error(
-        `Cannot add to cart! You need ${voucher.points as number} points but only have ${userPoints} points.`,
-        {
-          duration: 4000,
-          position: "top-center",
-        }
-      );
-      return;
-    }
-
-    const result = await addToCart(user.id, voucher.id as number);
-    if (result.success) {
-      toast.success(result.message, {
-        duration: 3000,
-        position: "top-center",
-      });
-    } else {
-      toast.error(result.message, {
+  // Check if user has enough points for total quantity
+  if (userPoints < requiredPoints) {
+    toast.error(
+      `Cannot add to cart! You need ${requiredPoints} points but only have ${userPoints} points.`,
+      {
         duration: 4000,
         position: "top-center",
-      });
-    }
-  };
+      }
+    );
+    return;
+  }
 
+  const result = await addToCart(user.id, voucher.id as number, quantity);
+  if (result.success) {
+    toast.success(result.message, {
+      duration: 3000,
+      position: "top-center",
+    });
+  } else {
+    toast.error(result.message, {
+      duration: 4000,
+      position: "top-center",
+    });
+  }
+};
+
+  
   // Handle add to wishlist
   const handleAddToWishlist = async () => {
     if (!user?.id || !voucher) return;
@@ -308,6 +322,24 @@ function VoucherDetailsContent() {
     Redeeming a voucher means you accept these terms.
   </li>
 </ul>
+</div>
+
+
+{/* Quantity Selector */}
+<div className="mt-6 flex items-center justify-center space-x-6">
+  <Button
+    onClick={handleDecrease}
+    className="w-10 h-10 flex items-center justify-center bg-[#512da8] text-white rounded-md shadow hover:bg-[#6a3fe3]"
+  >
+    -
+  </Button>
+  <span className="text-xl font-semibold">{quantity}</span>
+  <Button
+    onClick={handleIncrease}
+    className="w-10 h-10 flex items-center justify-center bg-[#512da8] text-white rounded-md shadow hover:bg-[#6a3fe3]"
+  >
+    +
+  </Button>
 </div>
 
           {/* Action Buttons */}
