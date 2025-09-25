@@ -25,7 +25,8 @@ import {
   generateVoucherPDF,
 } from "./action";
 import { supabaseBrowser } from "@/lib/supabase/client";
-import toast, { Toaster } from "react-hot-toast";
+import { toast, Toaster } from "react-hot-toast";
+
 
 export default function HomePage() {
   const [user, setUser] = useState<{

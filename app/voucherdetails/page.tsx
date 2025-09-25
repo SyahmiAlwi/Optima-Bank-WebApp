@@ -15,7 +15,7 @@ import {
   redeemVoucher,
 } from "./action";
 import toast, { Toaster } from "react-hot-toast";
-
+import { FaUserCheck, FaGift, FaCalendarTimes, FaBan, FaRedo, FaInfoCircle } from "react-icons/fa";
 function VoucherDetailsContent() {
   const [user, setUser] = useState<{
     id?: string;
@@ -277,14 +277,37 @@ function VoucherDetailsContent() {
           </div>
 
           {/* Terms & Conditions */}
-          <div className="mt-4 border-t pt-4">
-            <h2 className="text-lg font-semibold text-gray-800 mb-2">
-              Terms & Conditions
-            </h2>
-            <p className="text-sm text-gray-600 whitespace-pre-line leading-relaxed">
-              {voucher.terms as string || "No specific terms available."}
-            </p>
-          </div>
+<div className="mt-6">
+<h2 className="text-lg font-semibold text-gray-800 mb-2">
+  Voucher Terms & Conditions
+</h2>
+  <ul className="space-y-3 text-sm">
+  <li className="flex items-center gap-2">
+    <FaUserCheck className="text-purple-600" />
+    Only registered members with enough points can redeem vouchers.
+  </li>
+  <li className="flex items-center gap-2">
+    <FaGift className="text-purple-600" />
+    Each voucher is single-use and cannot be refunded or exchanged for cash.
+  </li>
+  <li className="flex items-center gap-2">
+    <FaCalendarTimes className="text-purple-600" />
+    Vouchers expire on the stated date and cannot be extended.
+  </li>
+  <li className="flex items-center gap-2">
+    <FaBan className="text-purple-600" />
+    Not valid with other offers or for restricted items.
+  </li>
+  <li className="flex items-center gap-2">
+    <FaRedo className="text-purple-600" />
+    Points are deducted immediately after redemption.
+  </li>
+  <li className="flex items-center gap-2">
+    <FaInfoCircle className="text-purple-600" />
+    Redeeming a voucher means you accept these terms.
+  </li>
+</ul>
+</div>
 
           {/* Action Buttons */}
           <div className="mt-6 flex justify-between items-center">

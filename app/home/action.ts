@@ -21,8 +21,13 @@ export const getUser = async () => {
     .select("id, email, totalpoints")
     .eq("id", user.id)
     .single();
-  if (profileError || !profile) {
-    console.error("Error fetching profile:", profileError);
+
+  if (profileError) {
+    console.error("Supabase error fetching profile:", profileError, "User ID:", user.id);
+    return null;
+  }
+  if (!profile) {
+    console.warn("No profile found for user ID:", user.id);
     return null;
   }
   // Return the relevant profile info
