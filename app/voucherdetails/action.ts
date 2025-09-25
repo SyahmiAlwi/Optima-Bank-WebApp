@@ -43,8 +43,12 @@ export const fetchVouchers = async () => {
   return data || [];
 };
 
-// Add to cart functionality
-export const addToCart = async (userId: string, voucherId: number) => {
+// Add to cart functionality (with quantity support)
+export const addToCart = async (
+  userId: string,
+  voucherId: number,
+  quantity: number
+) => {
   const supabase = supabaseBrowser();
 
   // Check if item already exists in cart
@@ -61,10 +65,10 @@ export const addToCart = async (userId: string, voucherId: number) => {
   }
 
   if (existingItem) {
-    // Update quantity if item exists
+    // Update quantity by adding selected amount
     const { error: updateError } = await supabase
       .from("cart")
-      .update({ quantity: existingItem.quantity + 1 })
+      .update({ quantity: existingItem.quantity + quantity })
       .eq("id", existingItem.id);
 
     if (updateError) {
@@ -73,11 +77,11 @@ export const addToCart = async (userId: string, voucherId: number) => {
     }
     return { success: true, message: "Item quantity updated in cart" };
   } else {
-    // Add new item to cart
+    // Add new item with selected quantity
     const { error: insertError } = await supabase.from("cart").insert({
       user_id: userId,
       voucher_id: voucherId,
-      quantity: 1,
+      quantity: quantity,
     });
 
     if (insertError) {
@@ -87,6 +91,7 @@ export const addToCart = async (userId: string, voucherId: number) => {
     return { success: true, message: "Item added to cart" };
   }
 };
+
 
 // Add to wishlist functionality
 export const addToWishlist = async (userId: string, voucherId: number) => {
