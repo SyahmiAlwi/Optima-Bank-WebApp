@@ -172,4 +172,12 @@ export async function createVoucher(v: {
   return { ok: true as const }
 }
 
+export async function deleteVoucher(id: number) {
+  if (!Number.isFinite(id)) throw new Error("Voucher id is required")
+  const supabase = await supabaseServer()
+  const { error } = await supabase.from("voucher").delete().eq("id", id)
+  if (error) throw error
+  return { ok: true as const }
+}
+
 

@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import toast, { Toaster } from "react-hot-toast"
-import { adjustUserPoints, createVoucher, listUsers, listVouchers, type VoucherRow } from "./actions"
+import { adjustUserPoints, createVoucher, listUsers, listVouchers, type VoucherRow, deleteVoucher } from "./actions"
 import { GiTwoCoins } from "react-icons/gi"
 import { supabaseBrowser } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
-import { LogOut } from "lucide-react"
+import { LogOut, Trash2 } from "lucide-react"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 
 type UserRow = { id: string; email: string; totalpoints: number; is_admin: boolean }
 
@@ -56,6 +57,8 @@ export default function AdminPage() {
     image: "",
   })
   const [showEditModal, setShowEditModal] = useState(false)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   
   // Create voucher modal state
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -243,6 +246,62 @@ export default function AdminPage() {
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Failed to update voucher"
       toast.error(msg, { id: tId })
+    }
+  }
+
+  const fireConfetti = () => {
+    try {
+      const doc = document
+      const containerId = "confetti-mini-container"
+      let container = doc.getElementById(containerId)
+      if (!container) {
+        container = doc.createElement("div")
+        container.id = containerId
+        container.style.position = "fixed"
+        container.style.inset = "0px"
+        container.style.pointerEvents = "none"
+        container.style.zIndex = "9999"
+        doc.body.appendChild(container)
+        const style = doc.createElement("style")
+        style.textContent = `@keyframes confetti-fall{0%{transform:translateY(-100vh) rotate(0)}100%{transform:translateY(0) rotate(720deg)}}`
+        doc.head.appendChild(style)
+      }
+      const colors = ["#a78bfa","#f472b6","#34d399","#f59e0b","#60a5fa"]
+      for (let i = 0; i < 60; i++) {
+        const piece = doc.createElement("div")
+        const size = 6 + Math.random() * 6
+        piece.style.position = "absolute"
+        piece.style.top = "-10px"
+        piece.style.left = `${Math.random()*100}%`
+        piece.style.width = `${size}px`
+        piece.style.height = `${size*0.6}px`
+        piece.style.background = colors[Math.floor(Math.random()*colors.length)]
+        piece.style.opacity = "0.9"
+        piece.style.transform = `translateY(-100vh) rotate(0deg)`
+        piece.style.animation = `confetti-fall ${1.2 + Math.random()*0.8}s ease-out forwards`
+        piece.style.borderRadius = "2px"
+        container.appendChild(piece)
+        setTimeout(() => piece.remove(), 2200)
+      }
+    } catch {}
+  }
+
+  const onConfirmDelete = async () => {
+    if (!editingVoucher) return
+    setDeleting(true)
+    const tId = toast.loading("Deleting voucher...")
+    try {
+      await deleteVoucher(editingVoucher.id)
+      toast.success("Voucher deleted", { id: tId })
+      setConfirmingDelete(false)
+      closeEditModal()
+      fireConfetti()
+      loadVouchers()
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Failed to delete voucher"
+      toast.error(msg, { id: tId })
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -744,12 +803,22 @@ export default function AdminPage() {
             <div className="bg-gray-800 rounded-xl border border-gray-700 p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-semibold text-white">Edit Voucher</h3>
-                <button
-                  onClick={closeEditModal}
-                  className="text-gray-400 hover:text-white text-2xl"
-                >
-                  ×
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setConfirmingDelete(true)}
+                    className="h-9 w-9 rounded-md bg-red-600 hover:bg-red-700 text-white flex items-center justify-center shadow"
+                    title="Delete voucher"
+                    aria-label="Delete voucher"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={closeEditModal}
+                    className="text-gray-400 hover:text-white text-2xl"
+                  >
+                    ×
+                  </button>
+                </div>
               </div>
               
               <div className="space-y-4">
@@ -825,6 +894,27 @@ export default function AdminPage() {
             </div>
           </div>
         )}
+        {/* Delete confirmation dialog */}
+        <AlertDialog open={confirmingDelete} onOpenChange={setConfirmingDelete}>
+          <AlertDialogContent className="bg-gray-800 border-gray-700 text-white">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete this voucher?</AlertDialogTitle>
+              <AlertDialogDescription className="text-gray-300">
+                This action cannot be undone. The voucher will be permanently removed.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="border-gray-600 text-gray-200 hover:bg-gray-700">Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={onConfirmDelete}
+                className="bg-red-600 hover:bg-red-700 text-white"
+                disabled={deleting}
+              >
+                {deleting ? "Deleting..." : "Delete"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   )
