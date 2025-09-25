@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import toast, { Toaster } from "react-hot-toast"
-import { adjustUserPoints, createVoucher, listUsers, listVouchers, type VoucherRow, deleteVoucher } from "./actions"
+import { adjustUserPoints, createVoucher, listUsers, listVouchers, type VoucherRow, deleteVoucher, listCategories, createCategory, updateCategory, deleteCategory, type CategoryRow } from "./actions"
 import { GiTwoCoins } from "react-icons/gi"
 import { supabaseBrowser } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
-import { LogOut, Trash2 } from "lucide-react"
+import { LogOut, Trash2, Edit, Save, X } from "lucide-react"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 
 type UserRow = { id: string; email: string; totalpoints: number; is_admin: boolean }
@@ -24,7 +24,7 @@ type VoucherForm = {
 
 export default function AdminPage() {
   const router = useRouter()
-  const [tab, setTab] = useState<"users" | "vouchers">("users")
+  const [tab, setTab] = useState<"users" | "vouchers" | "categories">("users")
 
   // Users state
   const [q, setQ] = useState("")
@@ -40,6 +40,11 @@ export default function AdminPage() {
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [showHiddenOnly, setShowHiddenOnly] = useState(false)
+  const [categoriesDb, setCategoriesDb] = useState<CategoryRow[]>([])
+  const [newCategoryName, setNewCategoryName] = useState("")
+  const [editingCategory, setEditingCategory] = useState<number | null>(null)
+  const [editingCategoryName, setEditingCategoryName] = useState("")
+  const [confirmingDeleteCategory, setConfirmingDeleteCategory] = useState<number | null>(null)
   const [form, setForm] = useState<VoucherForm>({
     title: "",
     description: "",
@@ -143,16 +148,31 @@ export default function AdminPage() {
     return matchesCategory && matchesSearch && matchesHidden
   })
 
-  const categories = [
-    { id: 1, name: 'Sport', icon: '⚽', color: 'bg-blue-500/20 text-blue-300' },
-    { id: 2, name: 'Food', icon: '🍔', color: 'bg-orange-500/20 text-orange-300' },
-    { id: 3, name: 'Entertainment', icon: '🎬', color: 'bg-pink-500/20 text-pink-300' }
-  ]
+  const categories = (
+    categoriesDb.length ? categoriesDb : [
+      { id: 1, name: 'Sport' },
+      { id: 2, name: 'Food' },
+      { id: 3, name: 'Entertainment' }
+    ]
+  ).map((c) => ({
+    ...c,
+    icon: c.name === 'Sport' ? '⚽' : c.name === 'Food' ? '🍔' : '🎬',
+    color: c.name === 'Sport' ? 'bg-blue-500/20 text-blue-300' : c.name === 'Food' ? 'bg-orange-500/20 text-orange-300' : 'bg-pink-500/20 text-pink-300'
+  }))
 
   useEffect(() => {
     // load both lists on mount
     void loadUsers()
     void loadVouchers()
+    // try loading categories from DB if table exists
+    ;(async () => {
+      try {
+        const rows = await listCategories()
+        setCategoriesDb(rows)
+      } catch {
+        // ignore if table not present
+      }
+    })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -308,6 +328,47 @@ export default function AdminPage() {
     }
   }
 
+  const startEditCategory = (category: CategoryRow) => {
+    setEditingCategory(category.id)
+    setEditingCategoryName(category.name)
+  }
+
+  const cancelEditCategory = () => {
+    setEditingCategory(null)
+    setEditingCategoryName("")
+  }
+
+  const saveEditCategory = async () => {
+    if (!editingCategory) return
+    const tId = toast.loading("Updating category...")
+    try {
+      await updateCategory(editingCategory, editingCategoryName)
+      const rows = await listCategories()
+      setCategoriesDb(rows)
+      setEditingCategory(null)
+      setEditingCategoryName("")
+      toast.success("Category updated", { id: tId })
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Failed to update category"
+      toast.error(msg, { id: tId })
+    }
+  }
+
+  const onConfirmDeleteCategory = async () => {
+    if (!confirmingDeleteCategory) return
+    const tId = toast.loading("Deleting category...")
+    try {
+      await deleteCategory(confirmingDeleteCategory)
+      const rows = await listCategories()
+      setCategoriesDb(rows)
+      setConfirmingDeleteCategory(null)
+      toast.success("Category deleted", { id: tId })
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Failed to delete category"
+      toast.error(msg, { id: tId })
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-black">
       <Toaster position="top-center" />
@@ -358,7 +419,11 @@ export default function AdminPage() {
             {/* Animated Background Slider */}
             <div 
               className={`absolute top-1 bottom-1 rounded-md bg-purple-600 shadow-lg transition-all duration-300 ease-in-out ${
-                tab === "users" ? "left-1 w-[calc(50%-0.25rem)]" : "left-[calc(50%+0.25rem)] w-[calc(50%-0.25rem)]"
+                tab === "users" 
+                  ? "left-1 w-[calc(33.333%-0.25rem)]" 
+                  : tab === "vouchers" 
+                  ? "left-[calc(33.333%+0.25rem)] w-[calc(33.333%-0.25rem)]"
+                  : "left-[calc(66.666%+0.25rem)] w-[calc(33.333%-0.25rem)]"
               }`}
             />
             <button
@@ -380,6 +445,16 @@ export default function AdminPage() {
               onClick={() => setTab("vouchers")}
             >
               Vouchers
+            </button>
+            <button
+              className={`relative z-10 px-8 py-3 text-sm font-semibold rounded-md transition-all duration-300 ease-in-out flex items-center justify-center min-w-[100px] ${
+                tab === "categories" 
+                  ? "text-white" 
+                  : "text-purple-200 hover:text-white"
+              }`}
+              onClick={() => setTab("categories")}
+            >
+              Categories
             </button>
           </div>
         </div>
@@ -478,8 +553,8 @@ export default function AdminPage() {
           >
             {tab === "vouchers" && (
               <section className="max-w-7xl mx-auto">
-                {/* Compact Header with Search and Controls */}
-                <div className="flex items-center justify-between mb-6 bg-gray-800/30 backdrop-blur rounded-lg p-4 border border-gray-700/50">
+                {/* Search and Controls Header */}
+                <div className="flex items-center justify-between mb-4 bg-gray-800/30 backdrop-blur rounded-lg p-4 border border-gray-700/50">
                   {/* Search Bar */}
                   <div className="relative w-80">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -506,41 +581,6 @@ export default function AdminPage() {
                     )}
                   </div>
 
-                  {/* Category Filter - Compact */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-300 text-sm">Filter:</span>
-                    <div className="flex gap-1">
-                      <button
-                        onClick={() => setSelectedCategory(null)}
-                        className={`px-3 py-1 rounded-full text-xs font-medium transition-all duration-300 hover:scale-105 hover:shadow-lg ${
-                          selectedCategory === null 
-                            ? 'bg-purple-600 text-white shadow-purple-500/25' 
-                            : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 hover:shadow-gray-500/25'
-                        }`}
-                      >
-                        <span className="transition-all duration-300">All ({vouchers.length})</span>
-                      </button>
-                      {categories.map((category) => {
-                        const count = vouchers.filter(v => v.category_id === category.id).length
-                        return (
-                          <button
-                            key={category.id}
-                            onClick={() => setSelectedCategory(category.id)}
-                            className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-all duration-300 hover:scale-105 hover:shadow-lg group ${
-                              selectedCategory === category.id
-                                ? `${category.color} border border-current shadow-lg`
-                                : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 hover:shadow-gray-500/25'
-                            }`}
-                          >
-                            <span className="text-sm transition-transform duration-300 group-hover:scale-110">{category.icon}</span>
-                            <span className="transition-all duration-300 group-hover:tracking-wide">{category.name}</span>
-                            <span className="text-xs opacity-75 transition-all duration-300 group-hover:opacity-100">({count})</span>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-
                   {/* Action Buttons */}
                   <div className="flex items-center gap-2">
                     <Button 
@@ -562,14 +602,51 @@ export default function AdminPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                       </svg>
                     </Button>
-          <label className="flex items-center gap-2 text-sm text-gray-300 pl-2">
-            <input
-              type="checkbox"
-              checked={showHiddenOnly}
-              onChange={(e) => setShowHiddenOnly(e.target.checked)}
-            />
-            Show hidden only
-          </label>
+                    <label className="flex items-center gap-2 text-sm text-gray-300 pl-2">
+                      <input
+                        type="checkbox"
+                        checked={showHiddenOnly}
+                        onChange={(e) => setShowHiddenOnly(e.target.checked)}
+                      />
+                      Show hidden only
+                    </label>
+                  </div>
+                </div>
+
+                {/* Category Filter - Standalone */}
+                <div className="mb-6 bg-gray-800/20 backdrop-blur rounded-lg p-4 border border-gray-700/30">
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="text-gray-300 text-sm font-medium">Filter by Category:</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => setSelectedCategory(null)}
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 hover:scale-105 hover:shadow-lg ${
+                        selectedCategory === null 
+                          ? 'bg-purple-600 text-white shadow-purple-500/25' 
+                          : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 hover:shadow-gray-500/25'
+                      }`}
+                    >
+                      <span className="transition-all duration-300">All ({vouchers.length})</span>
+                    </button>
+                    {categories.map((category) => {
+                      const count = vouchers.filter(v => v.category_id === category.id).length
+                      return (
+                        <button
+                          key={category.id}
+                          onClick={() => setSelectedCategory(category.id)}
+                          className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 hover:scale-105 hover:shadow-lg group ${
+                            selectedCategory === category.id
+                              ? `${category.color} border border-current shadow-lg`
+                              : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 hover:shadow-gray-500/25'
+                          }`}
+                        >
+                          <span className="text-lg transition-transform duration-300 group-hover:scale-110">{category.icon}</span>
+                          <span className="transition-all duration-300 group-hover:tracking-wide">{category.name}</span>
+                          <span className="text-xs opacity-75 transition-all duration-300 group-hover:opacity-100 bg-black/20 px-1.5 py-0.5 rounded-full">({count})</span>
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
 
@@ -667,6 +744,131 @@ export default function AdminPage() {
               </section>
             )}
           </div>
+          <div 
+            className={`transition-all duration-500 ease-in-out ${
+              tab === "categories" 
+                ? "opacity-100 translate-y-0" 
+                : "opacity-0 translate-y-4 absolute inset-0 pointer-events-none"
+            }`}
+          >
+            {tab === "categories" && (
+              <section className="max-w-3xl mx-auto">
+                <div className="bg-gray-800/30 backdrop-blur rounded-lg p-4 border border-gray-700/50 mb-4 flex items-center gap-3">
+                  <input
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    placeholder="New category name"
+                    className="flex-1 bg-gray-700/50 border border-gray-600/50 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                  />
+                  <Button
+                    onClick={async () => {
+                      const name = newCategoryName.trim()
+                      if (!name) { toast.error('Enter category name'); return }
+                      const tId = toast.loading('Adding category...')
+                      try {
+                        await createCategory(name)
+                        const rows = await listCategories()
+                        setCategoriesDb(rows)
+                        setNewCategoryName("")
+                        toast.success('Category added', { id: tId })
+                      } catch (e: unknown) {
+                        const msg = e instanceof Error ? e.message : 'Failed to add category'
+                        toast.error(msg, { id: tId })
+                      }
+                    }}
+                    className="bg-purple-600 hover:bg-purple-700 text-white"
+                  >
+                    Add
+                  </Button>
+                  <Button
+                    onClick={async () => {
+                      const tId = toast.loading('Refreshing...')
+                      try {
+                        const rows = await listCategories()
+                        setCategoriesDb(rows)
+                        toast.success('Categories refreshed', { id: tId })
+                      } catch (e: unknown) {
+                        const msg = e instanceof Error ? e.message : 'Failed to refresh'
+                        toast.error(msg, { id: tId })
+                      }
+                    }}
+                    variant="outline"
+                    className="border-gray-600 text-gray-200"
+                  >
+                    Refresh
+                  </Button>
+                </div>
+                <div className="rounded-xl border border-gray-700 bg-gray-800/50">
+                  {categories.length === 0 ? (
+                    <div className="p-6 text-gray-300 text-sm">No categories yet.</div>
+                  ) : (
+                    <ul className="divide-y divide-gray-700">
+                      {categories.map((c) => (
+                        <li key={c.id} className="flex items-center justify-between px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">{c.icon}</span>
+                            {editingCategory === c.id ? (
+                              <input
+                                value={editingCategoryName}
+                                onChange={(e) => setEditingCategoryName(e.target.value)}
+                                className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                autoFocus
+                              />
+                            ) : (
+                              <>
+                                <span className="text-white font-medium">{c.name}</span>
+                                <span className="text-xs text-gray-400">#{c.id}</span>
+                              </>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {editingCategory === c.id ? (
+                              <>
+                                <Button
+                                  onClick={saveEditCategory}
+                                  size="sm"
+                                  className="bg-green-600 hover:bg-green-700 text-white h-8 w-8 p-0"
+                                >
+                                  <Save className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  onClick={cancelEditCategory}
+                                  size="sm"
+                                  variant="outline"
+                                  className="border-gray-600 text-gray-200 hover:bg-gray-700 h-8 w-8 p-0"
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </>
+                            ) : (
+                              <>
+                                <Button
+                                  onClick={() => startEditCategory(c)}
+                                  size="sm"
+                                  variant="outline"
+                                  className="border-gray-600 text-gray-200 hover:bg-gray-700 h-8 w-8 p-0"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  onClick={() => setConfirmingDeleteCategory(c.id)}
+                                  size="sm"
+                                  className="bg-red-600 hover:bg-red-700 text-white h-8 w-8 p-0"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+                <p className="text-xs text-gray-400 mt-3">Tip: Categories are used to group vouchers. Add as many as you need.</p>
+              </section>
+            )}
+          </div>
         </div>
 
         {/* Create Voucher Modal */}
@@ -717,9 +919,9 @@ export default function AdminPage() {
                     value={form.category_id}
                     onChange={(e) => setForm((p) => ({ ...p, category_id: Number(e.target.value) as 1 | 2 | 3 }))}
                   >
-                    <option value={1} className="bg-gray-800">Sport</option>
-                    <option value={2} className="bg-gray-800">Food</option>
-                    <option value={3} className="bg-gray-800">Entertainment</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id} className="bg-gray-800">{c.name}</option>
+                    ))}
                   </select>
                   </div>
                 </div>
@@ -859,9 +1061,9 @@ export default function AdminPage() {
                     value={editForm.category_id}
                     onChange={(e) => setEditForm((p) => ({ ...p, category_id: Number(e.target.value) as 1 | 2 | 3 }))}
                   >
-                    <option value={1} className="bg-gray-800">Sport</option>
-                    <option value={2} className="bg-gray-800">Food</option>
-                    <option value={3} className="bg-gray-800">Entertainment</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id} className="bg-gray-800">{c.name}</option>
+                    ))}
                   </select>
                 </div>
                 <input
@@ -937,6 +1139,27 @@ export default function AdminPage() {
                 disabled={deleting}
               >
                 {deleting ? "Deleting..." : "Delete"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Delete category confirmation dialog */}
+        <AlertDialog open={!!confirmingDeleteCategory} onOpenChange={(open) => !open && setConfirmingDeleteCategory(null)}>
+          <AlertDialogContent className="bg-gray-800 border-gray-700 text-white">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete this category?</AlertDialogTitle>
+              <AlertDialogDescription className="text-gray-300">
+                This action cannot be undone. The category will be permanently removed. Vouchers using this category will need to be reassigned.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="border-gray-600 text-gray-200 hover:bg-gray-700">Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={onConfirmDeleteCategory}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                Delete
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

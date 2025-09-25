@@ -185,4 +185,41 @@ export async function deleteVoucher(id: number) {
   return { ok: true as const }
 }
 
+export type CategoryRow = {
+  id: number
+  name: string
+}
+
+export async function listCategories(): Promise<CategoryRow[]> {
+  const supabase = await supabaseServer()
+  const { data, error } = await supabase.from("voucher_cat").select("id,category").order("id", { ascending: true })
+  if (error) throw error
+  return (data ?? []).map(row => ({ id: row.id, name: row.category })) as CategoryRow[]
+}
+
+export async function createCategory(name: string) {
+  if (!name || !name.trim()) throw new Error("Category name is required")
+  const supabase = await supabaseServer()
+  const { error } = await supabase.from("voucher_cat").insert({ category: name.trim() })
+  if (error) throw error
+  return { ok: true as const }
+}
+
+export async function updateCategory(id: number, name: string) {
+  if (!Number.isFinite(id)) throw new Error("Category id is required")
+  if (!name || !name.trim()) throw new Error("Category name is required")
+  const supabase = await supabaseServer()
+  const { error } = await supabase.from("voucher_cat").update({ category: name.trim() }).eq("id", id)
+  if (error) throw error
+  return { ok: true as const }
+}
+
+export async function deleteCategory(id: number) {
+  if (!Number.isFinite(id)) throw new Error("Category id is required")
+  const supabase = await supabaseServer()
+  const { error } = await supabase.from("voucher_cat").delete().eq("id", id)
+  if (error) throw error
+  return { ok: true as const }
+}
+
 
