@@ -39,6 +39,7 @@ export default function AdminPage() {
   const [uploading, setUploading] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
+  const [showHiddenOnly, setShowHiddenOnly] = useState(false)
   const [form, setForm] = useState<VoucherForm>({
     title: "",
     description: "",
@@ -138,7 +139,8 @@ export default function AdminPage() {
     const matchesCategory = !selectedCategory || v.category_id === selectedCategory
     const matchesSearch = !searchQuery.trim() || 
       (v.title?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
-    return matchesCategory && matchesSearch
+    const matchesHidden = showHiddenOnly ? Boolean((v as any).is_hidden) : true
+    return matchesCategory && matchesSearch && matchesHidden
   })
 
   const categories = [
@@ -235,6 +237,7 @@ export default function AdminPage() {
           points: editForm.points,
           category_id: editForm.category_id,
           image: editForm.image,
+          ...(typeof (editingVoucher as any).is_hidden === "boolean" ? { is_hidden: (editingVoucher as any).is_hidden } : {}),
         })
         .eq("id", editingVoucher.id)
       
@@ -559,6 +562,14 @@ export default function AdminPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                       </svg>
                     </Button>
+          <label className="flex items-center gap-2 text-sm text-gray-300 pl-2">
+            <input
+              type="checkbox"
+              checked={showHiddenOnly}
+              onChange={(e) => setShowHiddenOnly(e.target.checked)}
+            />
+            Show hidden only
+          </label>
                   </div>
                 </div>
 
@@ -604,13 +615,13 @@ export default function AdminPage() {
                               </div>
                             </div>
                           )}
-                          {/* Stock Badge */}
+                        {/* Stock/Hidden Badge */}
                           <div className={`absolute top-1 right-1 px-2 py-0.5 rounded-full text-xs font-medium ${
-                            v.stock > 0 
+                            (v as any).is_hidden ? 'bg-gray-500/90 text-white' : (v.stock > 0 
                               ? 'bg-green-500/90 text-white' 
-                              : 'bg-red-500/90 text-white'
+                              : 'bg-red-500/90 text-white')
                           }`}>
-                            {v.stock > 0 ? `${v.stock}` : 'Out'}
+                            {(v as any).is_hidden ? 'Hidden' : (v.stock > 0 ? `${v.stock}` : 'Out')}
                           </div>
                         </div>
 
@@ -873,6 +884,21 @@ export default function AdminPage() {
                       }}
                     />
                     <span className="text-gray-300 text-sm">Preview</span>
+                  </div>
+                )}
+                {/* Hidden toggle for voucher */}
+                {editingVoucher && (
+                  <div className="flex items-center gap-2 pt-2">
+                    <input
+                      id="is-hidden-toggle"
+                      type="checkbox"
+                      checked={Boolean((editingVoucher as any).is_hidden)}
+                      onChange={(e) => {
+                        const isHidden = e.target.checked
+                        setEditingVoucher({ ...editingVoucher, is_hidden: isHidden } as any)
+                      }}
+                    />
+                    <label htmlFor="is-hidden-toggle" className="text-sm text-gray-200">Hidden from users</label>
                   </div>
                 )}
                 <div className="flex gap-3 pt-4">

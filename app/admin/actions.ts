@@ -131,13 +131,15 @@ export type VoucherRow = {
   image: string | null
   terms: string | null
   stock: number
+  is_hidden?: boolean | null
 }
 
 export async function listVouchers(): Promise<VoucherRow[]> {
   const supabase = await supabaseServer()
   const { data, error } = await supabase
     .from("voucher")
-    .select("id,title,description,points,category_id,image,terms,stock")
+    // Select all columns so this keeps working whether or not is_hidden exists yet
+    .select("*")
     .order("id", { ascending: false })
   if (error) throw error
   return (data ?? []) as VoucherRow[]
@@ -151,6 +153,7 @@ export async function createVoucher(v: {
   image?: string
   terms?: string
   stock?: number
+  is_hidden?: boolean
 }) {
   const supabase = await supabaseServer()
   if (!v.title || !v.title.trim()) throw new Error("Title is required")
@@ -165,6 +168,8 @@ export async function createVoucher(v: {
     image: v.image?.trim() || null,
     terms: v.terms?.trim() ?? null,
     stock: typeof v.stock === "number" && v.stock >= 0 ? Math.floor(v.stock) : 0,
+    // Only send is_hidden if defined to avoid errors on older schemas
+    ...(typeof v.is_hidden === "boolean" ? { is_hidden: v.is_hidden } : {}),
   }
 
   const { error } = await supabase.from("voucher").insert(payload)
