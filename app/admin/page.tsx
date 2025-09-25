@@ -506,7 +506,7 @@ export default function AdminPage() {
                           {v.image ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
-                              src={`/images/${v.image}`}
+                              src={v.image.startsWith("http") ? v.image : `/images/${v.image}`}
                               alt={v.title ?? "voucher"}
                               className="w-full h-24 rounded-lg object-cover border border-gray-600/50 group-hover:border-purple-500/50 transition-all duration-300"
                               onError={(e) => {
@@ -643,7 +643,7 @@ export default function AdminPage() {
                   <div className="flex items-center gap-3">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img 
-                      src={`/images/${form.image}`} 
+                      src={form.image.startsWith("http") ? form.image : `/images/${form.image}`} 
                       alt="preview" 
                       className="w-16 h-16 rounded object-cover border border-gray-600" 
                       onError={(e) => {
@@ -759,7 +759,7 @@ export default function AdminPage() {
                   <div className="flex items-center gap-3">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img 
-                      src={`/images/${editForm.image}`} 
+                      src={editForm.image.startsWith("http") ? editForm.image : `/images/${editForm.image}`} 
                       alt="preview" 
                       className="w-16 h-16 rounded object-cover border border-gray-600" 
                       onError={(e) => {
