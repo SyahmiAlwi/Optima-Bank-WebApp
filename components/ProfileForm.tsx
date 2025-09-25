@@ -68,15 +68,16 @@ export default function ProfileForm({ userId, initial }: Props) {
             phone: form.phone,          // make sure column exists
             about_me: form.about_me,    // make sure column exists
             updated_at: new Date().toISOString(),
-          } as any,
+          },
           { onConflict: "id" }
         )
       if (upsertErr) throw upsertErr
 
       setEditing(false)
       setMsg("✅ Saved")
-    } catch (err: any) {
-      setMsg(`❌ ${err.message}`)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      setMsg(`❌ ${message}`)
     } finally {
       setSaving(false)
     }
@@ -108,8 +109,9 @@ export default function ProfileForm({ userId, initial }: Props) {
         .update({ avatar_url: publicUrl, updated_at: new Date().toISOString() })
         .eq("id", userId)
       setMsg("✅ Photo updated")
-    } catch (err: any) {
-      setMsg(`❌ ${err.message}`)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      setMsg(`❌ ${message}`)
     } finally {
       setUploading(false)
     }

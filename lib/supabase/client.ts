@@ -20,6 +20,7 @@ export const supabaseBrowser = (): SupabaseClient => {
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,
+        flowType: "pkce",
       },
     },
   );

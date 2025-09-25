@@ -62,12 +62,23 @@ export default function AuthPage() {
   });
 
   const handleSignIn = async (values: z.infer<typeof signInSchema>) => {
-    const { error } = await supabase.auth.signInWithPassword(values);
+    const { data, error } = await supabase.auth.signInWithPassword(values);
     if (error) {
       toast.error(error.message);
       return;
     }
     toast.success("Signed in!");
+    try {
+      if (data?.user) {
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("is_admin")
+          .eq("id", data.user.id)
+          .single();
+        router.push(prof?.is_admin ? "/admin" : "/home");
+        return;
+      }
+    } catch {}
     router.push("/home");
   };
 
@@ -107,6 +118,19 @@ export default function AuthPage() {
       }
 
       toast.success("Account created!");
+      try {
+        const { data: auth } = await supabase.auth.getUser();
+        const uid = auth.user?.id;
+        if (uid) {
+          const { data: prof } = await supabase
+            .from("profiles")
+            .select("is_admin")
+            .eq("id", uid)
+            .single();
+          router.push(prof?.is_admin ? "/admin" : "/home");
+          return;
+        }
+      } catch {}
       router.push("/home");
     } catch (e) {
       toast.error("Unexpected error. Please try again.");
