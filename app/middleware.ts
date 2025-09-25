@@ -39,16 +39,10 @@ export async function middleware(req: NextRequest) {
     data: { session },
   } = await supabase.auth.getSession()
 
-  // Allow OAuth callback to pass through without redirects
-  if (req.nextUrl.pathname === '/auth/callback') {
+  // Always allow auth routes (including callback) to pass through.
+  // This avoids race conditions while Supabase sets session cookies.
+  if (req.nextUrl.pathname.startsWith('/auth')) {
     return response
-  }
-
-  // Redirect authenticated users away from auth page (except callback)
-  if (req.nextUrl.pathname.startsWith('/auth') && req.nextUrl.pathname !== '/auth/callback') {
-    if (session) {
-      return NextResponse.redirect(new URL('/home', req.url))
-    }
   }
 
   // Protect /home route - redirect to auth if not logged in
@@ -62,7 +56,7 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/home/:path*', '/auth/:path*']
+  matcher: ['/home/:path*', '/admin/:path*', '/auth/:path*']
 }
 
 
