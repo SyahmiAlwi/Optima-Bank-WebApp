@@ -12,7 +12,8 @@ export async function GET(req: NextRequest) {
 
   try {
     const supabase = await supabaseServer()
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    // Use full URL; Supabase can parse verifier/params as needed
+    const { error } = await supabase.auth.exchangeCodeForSession(req.url)
     if (error) {
       return NextResponse.redirect(new URL("/auth?error=oauth", req.url))
     }
