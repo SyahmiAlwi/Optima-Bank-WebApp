@@ -32,6 +32,9 @@ export default function AdminPage() {
   const [loadingUsers, setLoadingUsers] = useState(false)
   const [deltas, setDeltas] = useState<Record<string, number>>({})
   const [reasons, setReasons] = useState<Record<string, string>>({})
+  const [pointAdjustments, setPointAdjustments] = useState<Record<string, number>>({})
+  const [editingPoints, setEditingPoints] = useState<Record<string, boolean>>({})
+  const [tempPointValues, setTempPointValues] = useState<Record<string, number>>({})
 
   // Vouchers state
   const [vouchers, setVouchers] = useState<VoucherRow[]>([])
@@ -95,7 +98,6 @@ export default function AdminPage() {
     try {
       // Use existing bucket name: "voucher-images"
       const filePath = `${Date.now()}-${file.name}`
-      const inputEl = ev.currentTarget
       const { error: upErr } = await supabase.storage.from("voucher-images").upload(filePath, file, {
         contentType: file.type,
         cacheControl: "3600",
@@ -144,7 +146,7 @@ export default function AdminPage() {
     const matchesCategory = !selectedCategory || v.category_id === selectedCategory
     const matchesSearch = !searchQuery.trim() || 
       (v.title?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
-    const matchesHidden = showHiddenOnly ? Boolean((v as any).is_hidden) : true
+    const matchesHidden = showHiddenOnly ? Boolean(v.is_hidden) : true
     return matchesCategory && matchesSearch && matchesHidden
   })
 
@@ -176,11 +178,38 @@ export default function AdminPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const adjustPoints = (userId: string, change: number) => {
+    setPointAdjustments(prev => ({
+      ...prev,
+      [userId]: (prev[userId] || 0) + change
+    }))
+  }
+
+  const startEditingPoints = (userId: string, currentPoints: number) => {
+    setEditingPoints(prev => ({ ...prev, [userId]: true }))
+    setTempPointValues(prev => ({ ...prev, [userId]: currentPoints }))
+  }
+
+  const finishEditingPoints = (userId: string) => {
+    const user = users.find(u => u.id === userId)
+    if (user) {
+      const newValue = tempPointValues[userId] || user.totalpoints
+      const adjustment = newValue - user.totalpoints
+      setPointAdjustments(prev => ({ ...prev, [userId]: adjustment }))
+    }
+    setEditingPoints(prev => ({ ...prev, [userId]: false }))
+  }
+
+  const cancelEditingPoints = (userId: string) => {
+    setEditingPoints(prev => ({ ...prev, [userId]: false }))
+    setTempPointValues(prev => ({ ...prev, [userId]: 0 }))
+  }
+
   const applyDelta = async (userId: string) => {
-    const delta = Math.trunc(deltas[userId] ?? 0)
+    const delta = Math.trunc(pointAdjustments[userId] ?? 0)
     const reason = (reasons[userId] ?? "").trim()
     if (!delta) {
-      toast.error("Enter a non-zero delta")
+      toast.error("No points adjustment made")
       return
     }
     if (!reason) {
@@ -191,6 +220,8 @@ export default function AdminPage() {
     try {
       const res = await adjustUserPoints(userId, delta, reason)
       setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, totalpoints: res.newBalance } : u)))
+      setPointAdjustments(prev => ({ ...prev, [userId]: 0 }))
+      setReasons(prev => ({ ...prev, [userId]: "" }))
       toast.success("Points updated", { id: tId })
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Failed to update points"
@@ -257,7 +288,7 @@ export default function AdminPage() {
           points: editForm.points,
           category_id: editForm.category_id,
           image: editForm.image,
-          ...(typeof (editingVoucher as any).is_hidden === "boolean" ? { is_hidden: (editingVoucher as any).is_hidden } : {}),
+          ...(typeof editingVoucher?.is_hidden === "boolean" ? { is_hidden: editingVoucher?.is_hidden } : {}),
         })
         .eq("id", editingVoucher.id)
       
@@ -493,13 +524,13 @@ export default function AdminPage() {
                   ) : (
                     <div className="overflow-auto">
                       <table className="min-w-full text-sm">
-                        <thead className="bg-blue-600">
+                        <thead className="bg-purple-700">
                           <tr>
-                            <th className="text-left px-4 py-3 font-semibold text-gray-100">Email</th>
-                            <th className="text-left px-4 py-3 font-semibold text-gray-100">Points</th>
-                            <th className="text-left px-4 py-3 font-semibold text-gray-100">Delta</th>
-                            <th className="text-left px-4 py-3 font-semibold text-gray-100">Reason</th>
-                            <th className="px-4 py-3" />
+                            <th className="text-center px-4 py-3 font-semibold text-gray-100">Email</th>
+                            <th className="text-center px-4 py-3 font-semibold text-gray-100">Points</th>
+                            <th className="text-center px-4 py-3 font-semibold text-gray-100">Adjust</th>
+                            <th className="text-center px-4 py-3 font-semibold text-gray-100">Reason</th>
+                            <th className="text-center px-4 py-3 font-semibold text-gray-100">Action</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-700">
@@ -510,12 +541,62 @@ export default function AdminPage() {
                                 <GiTwoCoins className="text-yellow-400" /> {u.totalpoints}
                               </td>
                               <td className="px-4 py-3">
-                                <input
-                                  type="number"
-                                  className="w-28 bg-gray-700 border border-gray-600 rounded-lg px-2 py-1 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
-                                  value={deltas[u.id] ?? 0}
-                                  onChange={(e) => setDeltas((p) => ({ ...p, [u.id]: Number(e.target.value) }))}
-                                />
+                                <div className="flex items-center bg-gray-700 rounded-lg border border-gray-600 overflow-hidden w-32">
+                                  <button
+                                    onClick={() => adjustPoints(u.id, -1)}
+                                    className="bg-gray-600 hover:bg-gray-500 text-white px-3 py-2 transition-colors duration-200 flex items-center justify-center"
+                                  >
+                                    <span className="text-lg font-bold">−</span>
+                                  </button>
+                                  {editingPoints[u.id] ? (
+                                    <div className="flex items-center px-2 py-1">
+                                      <input
+                                        type="text"
+                                        value={tempPointValues[u.id] || u.totalpoints}
+                                        onChange={(e) => {
+                                          const value = e.target.value.replace(/[^0-9]/g, '')
+                                          setTempPointValues(prev => ({ ...prev, [u.id]: Number(value) || 0 }))
+                                        }}
+                                        onBlur={() => finishEditingPoints(u.id)}
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter') {
+                                            finishEditingPoints(u.id)
+                                          } else if (e.key === 'Escape') {
+                                            cancelEditingPoints(u.id)
+                                          }
+                                        }}
+                                        className="w-full bg-gray-600 text-center font-semibold text-white focus:outline-none focus:ring-2 focus:ring-purple-400 rounded border-0"
+                                        autoFocus
+                                        style={{ 
+                                          WebkitAppearance: 'none',
+                                          MozAppearance: 'textfield'
+                                        } as React.CSSProperties}
+                                      />
+                                    </div>
+                                  ) : (
+                                    <div 
+                                      className={`px-4 py-2 min-w-[60px] text-center font-semibold cursor-pointer hover:bg-gray-600 transition-colors ${
+                                        (pointAdjustments[u.id] || 0) > 0 ? 'text-green-400' :
+                                        (pointAdjustments[u.id] || 0) < 0 ? 'text-red-400' :
+                                        'text-gray-300'
+                                      }`}
+                                      onClick={() => startEditingPoints(u.id, u.totalpoints + (pointAdjustments[u.id] || 0))}
+                                      onWheel={(e) => {
+                                        e.preventDefault()
+                                        const delta = e.deltaY > 0 ? -1 : 1
+                                        adjustPoints(u.id, delta)
+                                      }}
+                                    >
+                                      {u.totalpoints + (pointAdjustments[u.id] || 0)}
+                                    </div>
+                                  )}
+                                  <button
+                                    onClick={() => adjustPoints(u.id, 1)}
+                                    className="bg-gray-600 hover:bg-gray-500 text-white px-3 py-2 transition-colors duration-200 flex items-center justify-center"
+                                  >
+                                    <span className="text-lg font-bold">+</span>
+                                  </button>
+                                </div>
                               </td>
                               <td className="px-4 py-3">
                                 <input
@@ -528,7 +609,12 @@ export default function AdminPage() {
                               <td className="px-4 py-3 text-right">
                                 <Button 
                                   onClick={() => applyDelta(u.id)}
-                                  className="bg-white hover:bg-gray-100 text-gray-800 border-0 shadow-lg"
+                                  disabled={!pointAdjustments[u.id] && !reasons[u.id]}
+                                  className={`${
+                                    pointAdjustments[u.id] && reasons[u.id]?.trim()
+                                      ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                                      : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                                  } border-0 shadow-lg`}
                                 >
                                   Apply
                                 </Button>
@@ -694,11 +780,11 @@ export default function AdminPage() {
                           )}
                         {/* Stock/Hidden Badge */}
                           <div className={`absolute top-1 right-1 px-2 py-0.5 rounded-full text-xs font-medium ${
-                            (v as any).is_hidden ? 'bg-gray-500/90 text-white' : (v.stock > 0 
+                            v.is_hidden ? 'bg-gray-500/90 text-white' : (v.stock > 0 
                               ? 'bg-green-500/90 text-white' 
                               : 'bg-red-500/90 text-white')
                           }`}>
-                            {(v as any).is_hidden ? 'Hidden' : (v.stock > 0 ? `${v.stock}` : 'Out')}
+                            {v.is_hidden ? 'Hidden' : (v.stock > 0 ? `${v.stock}` : 'Out')}
                           </div>
                         </div>
 
@@ -1094,10 +1180,12 @@ export default function AdminPage() {
                     <input
                       id="is-hidden-toggle"
                       type="checkbox"
-                      checked={Boolean((editingVoucher as any).is_hidden)}
+                      checked={Boolean(editingVoucher?.is_hidden)}
                       onChange={(e) => {
                         const isHidden = e.target.checked
-                        setEditingVoucher({ ...editingVoucher, is_hidden: isHidden } as any)
+                        if (editingVoucher) {
+                          setEditingVoucher({ ...(editingVoucher as VoucherRow), is_hidden: isHidden })
+                        }
                       }}
                     />
                     <label htmlFor="is-hidden-toggle" className="text-sm text-gray-200">Hidden from users</label>
