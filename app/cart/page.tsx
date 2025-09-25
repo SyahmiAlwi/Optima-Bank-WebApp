@@ -23,6 +23,7 @@ import {
   generateAllVouchersPDF,
 } from "./action";
 import toast, { Toaster } from "react-hot-toast";
+import { resolveVoucherImage } from "@/lib/utils";
 
 interface CartItem {
   id: number;
@@ -845,7 +846,7 @@ export default function CartPage() {
                         ×
                       </button>
                       <img
-                        src={`/images/${item.voucher.image || "default.jpg"}`}
+                        src={resolveVoucherImage(item.voucher.image)}
                         alt={item.voucher.title}
                         className={`w-24 h-24 rounded-md object-cover ${
                           isGreyedOut ? "grayscale" : ""

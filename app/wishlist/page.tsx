@@ -14,6 +14,7 @@ import {
   redeemVoucher,
 } from "./action";
 import toast, { Toaster } from "react-hot-toast";
+import { resolveVoucherImage } from "@/lib/utils";
 
 export default function WishlistPage() {
   const [user, setUser] = useState<{
@@ -188,7 +189,7 @@ export default function WishlistPage() {
                     className="bg-white rounded-lg shadow-md p-4"
                   >
                     <img
-                      src={`/images/${voucher.image || "default.jpg"}`}
+                      src={resolveVoucherImage(voucher.image)}
                       alt={voucher.title as string}
                       className="w-full h-32 object-cover rounded-md mb-3 cursor-pointer"
                       onClick={() =>

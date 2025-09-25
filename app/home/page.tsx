@@ -25,8 +25,8 @@ import {
   generateVoucherPDF,
 } from "./action";
 import { supabaseBrowser } from "@/lib/supabase/client";
-import { toast, Toaster } from "react-hot-toast";
-
+import toast, { Toaster } from "react-hot-toast";
+import { resolveVoucherImage } from "@/lib/utils";
 
 export default function HomePage() {
   const [user, setUser] = useState<{
@@ -330,7 +330,7 @@ export default function HomePage() {
             </h3>
             <div className="mb-4">
               <img
-                src={`${typeof voucherToRedeem.image === "string" && (voucherToRedeem.image as string).startsWith("http") ? voucherToRedeem.image : "/images/" + (voucherToRedeem.image || "default.jpg")}`}
+                src={resolveVoucherImage(voucherToRedeem.image)}
                 alt={voucherToRedeem.title as string}
                 className="w-full h-32 object-cover rounded-md mb-3"
               />
@@ -491,7 +491,7 @@ export default function HomePage() {
                   <div className="flex items-center gap-6 w-full">
                     <div className="w-60 h-28 rounded-2xl overflow-hidden flex-shrink-0 bg-white">
                       <img
-                        src={`${typeof promoVouchers[promoIndex].image === "string" && (promoVouchers[promoIndex].image as string).startsWith("http") ? promoVouchers[promoIndex].image : "/images/" + (promoVouchers[promoIndex].image || "default.jpg")}`}
+                        src={resolveVoucherImage(promoVouchers[promoIndex].image)}
                         alt={promoVouchers[promoIndex].title as string}
                         className="w-full h-full object-cover"
                       />
@@ -545,7 +545,7 @@ export default function HomePage() {
                     className="bg-white rounded-lg shadow-md p-4"
                   >
                     <img
-                      src={`${typeof voucher.image === "string" && (voucher.image as string).startsWith("http") ? voucher.image : "/images/" + (voucher.image || "default.jpg")}`}
+                      src={resolveVoucherImage(voucher.image)}
                       alt={voucher.title as string}
                       className="w-full h-32 object-cover rounded-md mb-3 cursor-pointer"
                       onClick={() =>
