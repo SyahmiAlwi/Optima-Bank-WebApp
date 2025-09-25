@@ -16,8 +16,6 @@ function PurpleNavbar({ points = 0 }: { points?: number }) {
         {/* Links */}
         <nav className="hidden gap-8 md:flex">
           <Link href="/home" className="font-medium text-[#FFD44D]">Home</Link>
-          <Link href="/rewards" className="font-medium hover:text-[#FFD44D]">Rewards</Link>
-          <Link href="/voucher" className="font-medium hover:text-[#FFD44D]">Voucher</Link>
           <Link href="/wishlist" className="font-medium hover:text-[#FFD44D]">Wishlist</Link>
           <Link href="/cart" className="font-medium hover:text-[#FFD44D]">Cart</Link>
         </nav>
