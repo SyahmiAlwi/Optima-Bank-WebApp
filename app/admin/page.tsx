@@ -540,8 +540,8 @@ export default function AdminPage() {
                               <td className="px-4 py-3 text-gray-200 flex items-center gap-1">
                                 <GiTwoCoins className="text-yellow-400" /> {u.totalpoints}
                               </td>
-                              <td className="px-4 py-3">
-                                <div className="flex items-center bg-gray-700 rounded-lg border border-gray-600 overflow-hidden w-32">
+                              <td className="px-4 py-3 text-center">
+                                <div className="flex items-center bg-gray-700 rounded-lg border border-gray-600 overflow-hidden w-32 mx-auto">
                                   <button
                                     onClick={() => adjustPoints(u.id, -1)}
                                     className="bg-gray-600 hover:bg-gray-500 text-white px-3 py-2 transition-colors duration-200 flex items-center justify-center"
