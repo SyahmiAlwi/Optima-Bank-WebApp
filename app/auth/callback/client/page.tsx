@@ -74,7 +74,7 @@ export default function AuthCallbackClientPage() {
           })
           if (sessionAfterEvent?.user) {
             session = sessionAfterEvent
-            sessionError = null as any
+            sessionError = null as import("@supabase/supabase-js").AuthError | null
           }
         }
         
