@@ -47,9 +47,36 @@ export default function AuthCallbackClientPage() {
     const handleOAuthCallback = async () => {
       try {
         console.log("Client auth callback started");
+        // First, attempt to exchange the code on the client. This covers cases
+        // where the flow was started on the client and the flow state is stored client-side.
+        const { error: exchangeErr } = await supabase.auth.exchangeCodeForSession(window.location.href)
+        if (exchangeErr) {
+          console.warn("Client exchangeCodeForSession warning:", exchangeErr)
+        }
+
+        // Now try to get the current session immediately
+        let { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
-        // Get the current session
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        // If session not ready yet, wait for auth state change or timeout
+        if (!session?.user) {
+          const sessionAfterEvent = await new Promise<import("@supabase/supabase-js").Session | null>((resolve) => {
+            const timeout = setTimeout(async () => {
+              const { data } = await supabase.auth.getSession()
+              resolve(data.session ?? null)
+            }, 2000)
+            const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
+              if (s?.user) {
+                clearTimeout(timeout)
+                sub.subscription.unsubscribe()
+                resolve(s)
+              }
+            })
+          })
+          if (sessionAfterEvent?.user) {
+            session = sessionAfterEvent
+            sessionError = null as any
+          }
+        }
         
         if (sessionError) {
           console.error("Session error:", sessionError);
@@ -58,13 +85,46 @@ export default function AuthCallbackClientPage() {
         }
         
         if (!session?.user) {
-          console.error("No session or user");
-          router.replace("/auth");
-          return;
+          console.error("No session or user after exchange/wait");
+          // Last resort: POST tokens to server to sync cookies for server actions
+          const { data: tokenData } = await supabase.auth.getSession()
+          if (tokenData.session?.access_token && tokenData.session?.refresh_token) {
+            try {
+              await fetch("/auth/sync", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  access_token: tokenData.session.access_token,
+                  refresh_token: tokenData.session.refresh_token,
+                }),
+              })
+              // try once more then redirect
+              const { data: final } = await supabase.auth.getSession()
+              if (final.session?.user) {
+                session = final.session
+              }
+            } catch {}
+          }
+          if (!session?.user) {
+            router.replace("/auth?error=no-session");
+            return;
+          }
         }
         
         console.log("Session found:", session.user.email);
-        
+
+        // Ensure server session cookies are synced for server actions
+        try {
+          await fetch("/auth/sync", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              access_token: session.access_token,
+              refresh_token: session.refresh_token,
+            }),
+          })
+        } catch {}
+
         // Create user profile if it doesn't exist
         await createUserProfile(session.user);
         

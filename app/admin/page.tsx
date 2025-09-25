@@ -6,6 +6,8 @@ import toast, { Toaster } from "react-hot-toast"
 import { adjustUserPoints, createVoucher, listUsers, listVouchers, type VoucherRow } from "./actions"
 import { GiTwoCoins } from "react-icons/gi"
 import { supabaseBrowser } from "@/lib/supabase/client"
+import { useRouter } from "next/navigation"
+import { LogOut } from "lucide-react"
 
 type UserRow = { id: string; email: string; totalpoints: number; is_admin: boolean }
 
@@ -20,6 +22,7 @@ type VoucherForm = {
 }
 
 export default function AdminPage() {
+  const router = useRouter()
   const [tab, setTab] = useState<"users" | "vouchers">("users")
 
   // Users state
@@ -115,6 +118,15 @@ export default function AdminPage() {
       toast.error(msg)
     } finally {
       setLoadingVouchers(false)
+    }
+  }
+
+  const onSignOut = async () => {
+    const supabase = supabaseBrowser()
+    try {
+      await supabase.auth.signOut()
+    } finally {
+      router.replace("/auth")
     }
   }
 
@@ -260,9 +272,19 @@ export default function AdminPage() {
           </div>
           
           {/* Welcome Message */}
-          <div className="text-right">
-            <p className="text-purple-200 text-sm">Welcome, admin!</p>
-            <p className="text-white font-medium">Manage users and vouchers</p>
+          <div className="flex items-center gap-6">
+            <div className="text-right leading-tight">
+              <p className="text-purple-200 text-sm">Welcome, admin!</p>
+              <p className="text-white font-medium">Manage users and vouchers</p>
+            </div>
+            <Button
+              onClick={onSignOut}
+              className="bg-red-600 hover:bg-red-700 text-white border-0 h-9 w-9 rounded-md flex items-center justify-center shadow-sm"
+              aria-label="Log out"
+              title="Log out"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </header>
@@ -592,12 +614,14 @@ export default function AdminPage() {
               </div>
               
               <div className="space-y-4">
+                <label className="block text-sm text-purple-200">Title</label>
                 <input
                   className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="Title"
                   value={form.title}
                   onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
                 />
+                <label className="block text-sm text-purple-200">Description</label>
                 <textarea
                   className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="Description (optional)"
@@ -605,7 +629,9 @@ export default function AdminPage() {
                   onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
                 />
                 <div className="grid grid-cols-2 gap-4">
-                  <input
+                  <div>
+                    <label className="block text-sm text-purple-200">Points</label>
+                    <input
                     type="number"
                     className="bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
                     placeholder="Points"
@@ -613,7 +639,10 @@ export default function AdminPage() {
                     min={0}
                     onChange={(e) => setForm((p) => ({ ...p, points: Number(e.target.value) }))}
                   />
-                  <select
+                  </div>
+                  <div>
+                    <label className="block text-sm text-purple-200">Category</label>
+                    <select
                     className="bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                     value={form.category_id}
                     onChange={(e) => setForm((p) => ({ ...p, category_id: Number(e.target.value) as 1 | 2 | 3 }))}
@@ -622,7 +651,9 @@ export default function AdminPage() {
                     <option value={2} className="bg-gray-800">Food</option>
                     <option value={3} className="bg-gray-800">Entertainment</option>
                   </select>
+                  </div>
                 </div>
+                <label className="block text-sm text-purple-200">Image URL (optional)</label>
                 <input
                   className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="Image filename (e.g., legoland.png)"
@@ -630,6 +661,7 @@ export default function AdminPage() {
                   onChange={(e) => setForm((p) => ({ ...p, image: e.target.value }))}
                 />
                 <div className="flex items-center gap-3">
+                  <span className="text-sm text-purple-200">Upload image file</span>
                   <input 
                     type="file" 
                     accept="image/*" 
@@ -641,6 +673,7 @@ export default function AdminPage() {
                 </div>
                 {form.image && (
                   <div className="flex items-center gap-3">
+                    <span className="text-sm text-purple-200">Preview</span>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img 
                       src={form.image.startsWith("http") ? form.image : `/images/${form.image}`} 
@@ -661,12 +694,14 @@ export default function AdminPage() {
                     </Button>
                   </div>
                 )}
+                <label className="block text-sm text-purple-200">Terms (optional)</label>
                 <input
                   className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="Terms (optional)"
                   value={form.terms ?? ""}
                   onChange={(e) => setForm((p) => ({ ...p, terms: e.target.value }))}
                 />
+                <label className="block text-sm text-purple-200">Stock (optional)</label>
                 <input
                   type="number"
                   className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500"

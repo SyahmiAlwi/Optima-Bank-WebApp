@@ -90,7 +90,8 @@ export async function adjustUserPoints(userId: string, delta: number, reason: st
   if (!Number.isInteger(delta) || delta === 0) throw new Error("delta must be a non-zero integer")
   if (!reason || !reason.trim()) throw new Error("reason required")
 
-  const supabase = await supabaseServer()
+  // Ensure caller is an authenticated admin and get server client bound to their cookies
+  const { supabase, admin } = await requireAdmin()
 
   // Fetch current balance
   const { data: prof, error: profErr } = await supabase
@@ -109,14 +110,14 @@ export async function adjustUserPoints(userId: string, delta: number, reason: st
     .eq("id", userId)
   if (updErr) throw updErr
 
-  // Audit (skip for now since we don't have admin ID)
-  // const { error: auditErr } = await supabase.from("points_audit").insert({
-  //   user_id: userId,
-  //   delta,
-  //   reason: reason.trim(),
-  //   admin_id: admin.id,
-  // })
-  // if (auditErr) throw auditErr
+  // Record audit trail
+  const { error: auditErr } = await supabase.from("points_audit").insert({
+    user_id: userId,
+    delta,
+    reason: reason.trim(),
+    admin_id: admin.id,
+  })
+  if (auditErr) throw auditErr
 
   return { ok: true as const, newBalance: next }
 }
