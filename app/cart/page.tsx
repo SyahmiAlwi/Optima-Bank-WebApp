@@ -740,7 +740,7 @@ export default function CartPage() {
       {/* Page Layout */}
       <div className="flex flex-1 min-h-screen">
         {/* Sidebar */}
-        <aside className="w-40 h-full border-r border-gray-200 flex flex-col pt-6">
+        <aside className="hidden md:flex w-40 h-full border-r border-gray-200 flex-col pt-6">
           <h2 className="px-4 text-lg font-bold text-[#512da8] mb-4">
             Categories
           </h2>
@@ -761,7 +761,7 @@ export default function CartPage() {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-6 flex gap-6">
+        <main className="flex-1 p-4 sm:p-6 flex flex-col md:flex-row gap-4 md:gap-6">
           {/* Left: Cart items */}
           <div className="flex-1">
             <div className="flex justify-between items-center mb-4">
@@ -817,7 +817,7 @@ export default function CartPage() {
                 return (
                   <div
                     key={item.id}
-                    className={`flex items-center justify-between p-4 mb-4 rounded-lg transition-colors ${
+                    className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 mb-4 rounded-lg transition-colors ${
                       item.selected
                         ? "bg-purple-50 border border-[#512da8]"
                         : isGreyedOut
@@ -826,7 +826,7 @@ export default function CartPage() {
                     }`}
                   >
                     {/* Selection checkbox + Remove button + Voucher image */}
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-start sm:items-center gap-3">
                       <input
                         type="checkbox"
                         checked={item.selected}
@@ -848,14 +848,14 @@ export default function CartPage() {
                       <img
                         src={resolveVoucherImage(item.voucher.image)}
                         alt={item.voucher.title}
-                        className={`w-24 h-24 rounded-md object-cover ${
+                        className={`w-20 h-20 sm:w-24 sm:h-24 rounded-md object-cover ${
                           isGreyedOut ? "grayscale" : ""
                         }`}
                       />
                     </div>
 
                     {/* Voucher info */}
-                    <div className="flex-1 ml-4">
+                    <div className="flex-1 sm:ml-4">
                       <h3
                         className={`font-semibold ${
                           isGreyedOut ? "text-gray-500" : ""
@@ -893,7 +893,7 @@ export default function CartPage() {
                     </div>
 
                     {/* Quantity controls */}
-                    <div className="flex flex-col items-center">
+                    <div className="flex items-center sm:flex-col sm:items-center">
                       <div className="flex items-center space-x-2">
                         <Button
                           className={`w-8 h-8 p-0 transition-colors ${
@@ -937,7 +937,7 @@ export default function CartPage() {
           </div>
 
           {/* Right: Summary or Download Section */}
-          <div className="w-64 bg-white p-4 rounded-lg shadow">
+          <div className="w-full md:w-64 bg-white p-4 rounded-lg shadow">
             {checkoutSuccess && redeemedVouchers.length > 0 ? (
               // Show download options after successful checkout
               <div>
