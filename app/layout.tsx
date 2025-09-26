@@ -32,8 +32,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+      </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gradient-to-b from-[#2f0037] to-[#1d1d1f]`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-svh bg-gradient-to-b from-[#2f0037] to-[#1d1d1f]`}
       >
         <PageTransition>
           {children}
