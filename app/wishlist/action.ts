@@ -1,34 +1,35 @@
 "use client";
 
 import { supabaseBrowser } from "@/lib/supabase/client";
+import jsPDF from "jspdf";
 
 // Fetch current logged-in user and their profile (including total_points)
 export const getUser = async () => {
   const supabase = supabaseBrowser();
-  
+
   // Get user from auth
   const {
     data: { user },
     error,
   } = await supabase.auth.getUser();
-  
+
   if (error || !user) {
     console.error("Error fetching user:", error);
     return null;
   }
-  
+
   // Fetch user profile from 'profiles' table
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("id, email, totalpoints")
     .eq("id", user.id)
     .single();
-    
+
   if (profileError || !profile) {
     console.error("Error fetching profile:", profileError);
     return null;
   }
-  
+
   // Return the relevant profile info
   return {
     id: profile.id,
@@ -72,14 +73,17 @@ export const fetchWishlistItems = async (userId: string) => {
 // Fetch all wishlist vouchers (alternative method)
 export const fetchWishlistVouchers = async () => {
   const supabase = supabaseBrowser();
-  
+
   // Get current user
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return [];
 
   const { data, error } = await supabase
     .from("wishlist")
-    .select(`
+    .select(
+      `
       voucher:voucher_id (
         id,
         title,
@@ -89,7 +93,8 @@ export const fetchWishlistVouchers = async () => {
         category_id,
         terms
       )
-    `)
+    `
+    )
     .eq("user_id", user.id);
 
   if (error) {
@@ -98,7 +103,11 @@ export const fetchWishlistVouchers = async () => {
   }
 
   // Return the voucher data from the nested relationship
-  return data?.map((item: Record<string, unknown>) => item.voucher).filter(Boolean) || [];
+  return (
+    data
+      ?.map((item: Record<string, unknown>) => item.voucher)
+      .filter(Boolean) || []
+  );
 };
 
 // Remove from wishlist functionality (by wishlist ID)
@@ -265,7 +274,7 @@ export const redeemVoucher = async (
 
     if (redemptionError) {
       console.error("Error recording redemption:", redemptionError);
-      
+
       // Don't rollback if it's just a table not found error
       if (redemptionError.code !== "42P01") {
         // Rollback points if redemption recording fails for other reasons
@@ -273,10 +282,10 @@ export const redeemVoucher = async (
           .from("profiles")
           .update({ totalpoints: profile.totalpoints })
           .eq("id", userId);
-        
+
         return { success: false, message: "Error recording redemption" };
       }
-      
+
       // Continue if redemptions table doesn't exist
       console.log("Redemptions table not found, continuing without recording");
     }
@@ -299,19 +308,22 @@ export const moveToCart = async (userId: string, voucherId: number) => {
   try {
     // Add to cart
     const cartResult = await addToCart(userId, voucherId);
-    
+
     if (cartResult.success) {
       // Remove from wishlist if successfully added to cart
       const wishlistResult = await removeFromWishlist(userId, voucherId);
-      
+
       if (wishlistResult.success) {
         return { success: true, message: "Item moved to cart" };
       } else {
         // Item was added to cart but couldn't be removed from wishlist
-        return { success: true, message: "Item added to cart (still in wishlist)" };
+        return {
+          success: true,
+          message: "Item added to cart (still in wishlist)",
+        };
       }
     }
-    
+
     return cartResult;
   } catch (error) {
     console.error("Error moving to cart:", error);
@@ -334,4 +346,66 @@ export const clearWishlist = async (userId: string) => {
   }
 
   return { success: true, message: "Wishlist cleared successfully" };
+};
+
+// Add function to generate and download voucher PDF
+export const generateVoucherPDF = (
+  voucher: {
+    title: string;
+    description: string;
+    points: number;
+    quantity: number;
+  },
+  userEmail: string
+) => {
+  const doc = new jsPDF();
+
+  // Set up the PDF styling
+  doc.setFontSize(20);
+  doc.setTextColor(81, 45, 168); // Purple color #512da8
+  doc.text("Optima Bank - Voucher", 20, 30);
+
+  // Add voucher details
+  doc.setFontSize(16);
+  doc.setTextColor(0, 0, 0);
+  doc.text(`Voucher: ${voucher.title}`, 20, 50);
+
+  doc.setFontSize(12);
+  doc.text(`Description: ${voucher.description}`, 20, 70);
+  doc.text(`Points Redeemed: ${voucher.points * voucher.quantity}`, 20, 85);
+  doc.text(`Quantity: ${voucher.quantity}`, 20, 100);
+  doc.text(`Redeemed by: ${userEmail}`, 20, 115);
+  doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 130);
+
+  // Add a voucher code (you can make this more sophisticated)
+  const voucherCode = `OB-${Date.now()}-${Math.random()
+    .toString(36)
+    .substr(2, 9)
+    .toUpperCase()}`;
+  doc.setFontSize(14);
+  doc.setTextColor(81, 45, 168);
+  doc.text(`Voucher Code: ${voucherCode}`, 20, 150);
+
+  // Add terms and conditions
+  doc.setFontSize(10);
+  doc.setTextColor(100, 100, 100);
+  doc.text("Terms & Conditions:", 20, 170);
+  doc.text(
+    "- This voucher is valid for 6 months from the date of issue",
+    20,
+    180
+  );
+  doc.text("- This voucher cannot be exchanged for cash", 20, 190);
+  doc.text("- Present this voucher at participating merchants", 20, 200);
+
+  // Add a border
+  doc.setDrawColor(81, 45, 168);
+  doc.setLineWidth(2);
+  doc.rect(10, 10, 190, 267);
+
+  // Download the PDF
+  const fileName = `${voucher.title.replace(/\s+/g, "_")}_${Date.now()}.pdf`;
+  doc.save(fileName);
+
+  return voucherCode;
 };

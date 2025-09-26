@@ -7,7 +7,11 @@ import { GiTwoCoins } from "react-icons/gi";
 import { signOutUser } from "@/app/home/action";
 
 // Suggest passing a richer user; we use presence of user to detect auth
-export function Navbar({ user }: { user?: { id?: string; totalpoints?: number } }) {
+export function Navbar({
+  user,
+}: {
+  user?: { id?: string; totalpoints?: number };
+}) {
   const [profileOpen, setProfileOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -17,7 +21,11 @@ export function Navbar({ user }: { user?: { id?: string; totalpoints?: number } 
   // Close dropdown on outside click / Esc
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
-      if (profileOpen && menuRef.current && !menuRef.current.contains(e.target as Node)) {
+      if (
+        profileOpen &&
+        menuRef.current &&
+        !menuRef.current.contains(e.target as Node)
+      ) {
         setProfileOpen(false);
       }
     }
@@ -48,20 +56,26 @@ export function Navbar({ user }: { user?: { id?: string; totalpoints?: number } 
       <div className="flex space-x-6 font-medium text-white">
         <button
           onClick={() => router.push("/home")}
-          className={`${isActive("/home") ? "text-yellow-300 font-bold" : "text-white"} hover:text-yellow-300`}
+          className={`${
+            isActive("/home") ? "text-yellow-300 font-bold" : "text-white"
+          } hover:text-yellow-300`}
         >
           Home
         </button>
         {/* Removed Rewards and Voucher tabs per request */}
         <button
           onClick={() => router.push("/wishlist")}
-          className={`flex items-center space-x-1 ${isActive("/wishlist") ? "text-yellow-300 font-bold" : "text-white"} hover:text-yellow-300`}
+          className={`flex items-center space-x-1 ${
+            isActive("/wishlist") ? "text-yellow-300 font-bold" : "text-white"
+          } hover:text-yellow-300`}
         >
           Wishlist
         </button>
         <button
           onClick={() => router.push("/cart")}
-          className={`${isActive("/cart") ? "text-yellow-300 font-bold" : "text-white"} hover:text-yellow-300`}
+          className={`${
+            isActive("/cart") ? "text-yellow-300 font-bold" : "text-white"
+          } hover:text-yellow-300`}
         >
           Cart
         </button>
@@ -100,6 +114,16 @@ export function Navbar({ user }: { user?: { id?: string; totalpoints?: number } 
                     role="menuitem"
                   >
                     User Profile
+                  </button>
+                  <button
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                    onClick={() => {
+                      router.push("/voucherhistory"); // go to voucher history
+                      setProfileOpen(false);
+                    }}
+                    role="menuitem"
+                  >
+                    Voucher History
                   </button>
                   <button
                     className="w-full text-left px-4 py-2 hover:bg-gray-100"

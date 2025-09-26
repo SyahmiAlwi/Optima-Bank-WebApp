@@ -4,7 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { FaHeart, FaShoppingCart } from "react-icons/fa";
+import { FaHeart, FaShoppingCart, FaDownload, FaTimes } from "react-icons/fa";
 import { GiTwoCoins } from "react-icons/gi";
 import { Navbar } from "@/components/ui/navbar";
 import { resolveVoucherImage } from "@/lib/utils";
@@ -15,8 +15,17 @@ import {
   addToWishlist,
   redeemVoucher,
 } from "./action";
+import { generateVoucherPDF } from "../home/action";
 import toast, { Toaster } from "react-hot-toast";
-import { FaUserCheck, FaGift, FaCalendarTimes, FaBan, FaRedo, FaInfoCircle } from "react-icons/fa";
+import {
+  FaUserCheck,
+  FaGift,
+  FaCalendarTimes,
+  FaBan,
+  FaRedo,
+  FaInfoCircle,
+} from "react-icons/fa";
+
 function VoucherDetailsContent() {
   const [user, setUser] = useState<{
     id?: string;
@@ -27,10 +36,17 @@ function VoucherDetailsContent() {
   const [loading, setLoading] = useState(true);
   const [isInWishlist, setIsInWishlist] = useState(false);
   const [checkingWishlist, setCheckingWishlist] = useState(true);
+  const [showRedeemConfirm, setShowRedeemConfirm] = useState(false);
+  const [showRedemptionSuccess, setShowRedemptionSuccess] = useState(false);
+  const [redeemedVoucher, setRedeemedVoucher] = useState<{
+    title: string;
+    description: string;
+    points: number;
+    quantity: number;
+  } | null>(null);
   const searchParams = useSearchParams();
   const router = useRouter();
   const supabase = supabaseBrowser();
-  
 
   // Fetch user
   useEffect(() => {
@@ -102,30 +118,136 @@ function VoucherDetailsContent() {
   }, [user?.id, voucherId, supabase]);
 
   // Add state at the top of VoucherDetailsContent
-const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState(1);
 
-const handleDecrease = () => {
-  if (quantity > 1) setQuantity(quantity - 1);
-};
+  const handleDecrease = () => {
+    if (quantity > 1) setQuantity(quantity - 1);
+  };
 
-const handleIncrease = () => {
-  setQuantity(quantity + 1);
-};
+  const handleIncrease = () => {
+    setQuantity(quantity + 1);
+  };
 
-  // Handle redeem
-  const handleRedeem = async () => {
+  // Handle redeem click (show confirmation)
+  const handleRedeemClick = () => {
     if (!user?.id || !voucher) return;
 
-    const result = await redeemVoucher(user.id, voucher.id as number, voucher.points as number);
+    const userPoints = user.totalpoints ?? 0;
+    const voucherPoints = voucher.points as number;
+    if (userPoints < voucherPoints) {
+      toast.error(
+        `Insufficient points! You need ${voucherPoints} points but only have ${userPoints}.`,
+        {
+          duration: 4000,
+          position: "top-center",
+        }
+      );
+      return;
+    }
+
+    setShowRedeemConfirm(true);
+  };
+
+  // Confirm redemption
+  const confirmRedemption = async () => {
+    if (!user?.id || !voucher) return;
+
+    const voucherPoints = voucher.points as number;
+    const result = await redeemVoucher(
+      user.id,
+      voucher.id as number,
+      voucherPoints
+    );
+
     if (result.success) {
       toast.success(result.message, {
         duration: 3000,
         position: "top-center",
       });
+
       // Update user points in state
       setUser((prev) =>
         prev ? { ...prev, totalpoints: result.newBalance } : null
       );
+
+      // Set redeemed voucher for success modal
+      setRedeemedVoucher({
+        title: voucher.title as string,
+        description: voucher.description as string,
+        points: voucherPoints,
+        quantity: 1,
+      });
+
+      // Close confirm modal and show success modal
+      setShowRedeemConfirm(false);
+      setShowRedemptionSuccess(true);
+    } else {
+      toast.error(result.message, {
+        duration: 4000,
+        position: "top-center",
+      });
+      setShowRedeemConfirm(false);
+    }
+  };
+
+  // Cancel redemption
+  const cancelRedemption = () => {
+    setShowRedeemConfirm(false);
+  };
+
+  // Handle individual voucher download
+  const downloadVoucher = (voucher: {
+    title: string;
+    description: string;
+    points: number;
+    quantity: number;
+  }) => {
+    try {
+      generateVoucherPDF(voucher, user?.email || "Unknown User");
+      toast.success(`Downloaded ${voucher.title} voucher`, {
+        duration: 3000,
+        position: "top-center",
+      });
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast.error("Failed to generate voucher PDF", {
+        duration: 3000,
+        position: "top-center",
+      });
+    }
+  };
+
+  // Close redemption success modal
+  const closeRedemptionSuccess = () => {
+    setShowRedemptionSuccess(false);
+    setRedeemedVoucher(null);
+  };
+
+  // Handle add to cart
+  const handleAddToCart = async () => {
+    if (!user?.id || !voucher) return;
+
+    const userPoints = user.totalpoints ?? 0;
+    const requiredPoints = (voucher.points as number) * quantity;
+
+    // Check if user has enough points for total quantity
+    if (userPoints < requiredPoints) {
+      toast.error(
+        `Cannot add to cart! You need ${requiredPoints} points but only have ${userPoints} points.`,
+        {
+          duration: 4000,
+          position: "top-center",
+        }
+      );
+      return;
+    }
+
+    const result = await addToCart(user.id, voucher.id as number, quantity);
+    if (result.success) {
+      toast.success(result.message, {
+        duration: 3000,
+        position: "top-center",
+      });
     } else {
       toast.error(result.message, {
         duration: 4000,
@@ -134,40 +256,6 @@ const handleIncrease = () => {
     }
   };
 
-  // Handle add to cart
-const handleAddToCart = async () => {
-  if (!user?.id || !voucher) return;
-
-  const userPoints = user.totalpoints ?? 0;
-  const requiredPoints = (voucher.points as number) * quantity;
-
-  // Check if user has enough points for total quantity
-  if (userPoints < requiredPoints) {
-    toast.error(
-      `Cannot add to cart! You need ${requiredPoints} points but only have ${userPoints} points.`,
-      {
-        duration: 4000,
-        position: "top-center",
-      }
-    );
-    return;
-  }
-
-  const result = await addToCart(user.id, voucher.id as number, quantity);
-  if (result.success) {
-    toast.success(result.message, {
-      duration: 3000,
-      position: "top-center",
-    });
-  } else {
-    toast.error(result.message, {
-      duration: 4000,
-      position: "top-center",
-    });
-  }
-};
-
-  
   // Handle add to wishlist
   const handleAddToWishlist = async () => {
     if (!user?.id || !voucher) return;
@@ -238,6 +326,109 @@ const handleAddToCart = async () => {
       {/* Navbar */}
       <Navbar user={user ?? undefined} />
 
+      {/* Redeem Confirmation Modal */}
+      {showRedeemConfirm && voucher && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4 text-[#512da8]">
+              Confirm Redemption
+            </h3>
+            <div className="mb-4">
+              <img
+                src={resolveVoucherImage(voucher.image)}
+                alt={voucher.title as string}
+                className="w-full h-32 object-cover rounded-md mb-3"
+              />
+              <h4 className="font-semibold text-gray-800">
+                {voucher.title as string}
+              </h4>
+              <p className="text-sm text-gray-600 mt-1">
+                {voucher.description as string}
+              </p>
+              <div className="flex items-center justify-between mt-3">
+                <div className="flex items-center text-yellow-500 font-semibold">
+                  <GiTwoCoins className="mr-1" />
+                  {voucher.points as number} points
+                </div>
+                <div className="text-sm text-gray-600">
+                  Balance after:{" "}
+                  {(user?.totalpoints ?? 0) - (voucher.points as number)} points
+                </div>
+              </div>
+            </div>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to redeem this voucher for{" "}
+              {voucher.points as number} points?
+            </p>
+            <div className="flex gap-4">
+              <Button
+                className="flex-1 bg-[#512da8] text-white hover:bg-[#6a3fe3]"
+                onClick={confirmRedemption}
+              >
+                Yes, Redeem
+              </Button>
+              <Button
+                className="flex-1 bg-gray-300 text-gray-700 hover:bg-gray-400"
+                onClick={cancelRedemption}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Redemption Success Modal */}
+      {showRedemptionSuccess && redeemedVoucher && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-green-600">
+                Redemption Successful! 🎉
+              </h3>
+              <button
+                onClick={closeRedemptionSuccess}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <FaTimes />
+              </button>
+            </div>
+
+            <div className="mb-4">
+              <h4 className="font-semibold text-gray-800 mb-2">
+                {redeemedVoucher.title}
+              </h4>
+              <p className="text-sm text-gray-600 mb-3">
+                {redeemedVoucher.description}
+              </p>
+              <div className="flex items-center text-yellow-500 font-semibold mb-4">
+                <GiTwoCoins className="mr-1" />
+                {redeemedVoucher.points} points redeemed
+              </div>
+            </div>
+
+            <p className="text-sm text-gray-600 mb-4">
+              Your voucher is ready for download:
+            </p>
+
+            <Button
+              className="w-full mb-3 bg-[#512da8] text-white hover:bg-[#6a3fe3] flex items-center justify-center gap-2"
+              onClick={() => downloadVoucher(redeemedVoucher)}
+            >
+              <FaDownload />
+              Download Voucher PDF
+            </Button>
+
+            <Button
+              className="w-full text-sm bg-gray-200 text-gray-700 hover:bg-gray-300"
+              onClick={closeRedemptionSuccess}
+            >
+              Continue Shopping
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Page content */}
       <div className="flex-1 p-6">
         {/* Back Button */}
@@ -271,7 +462,8 @@ const handleAddToCart = async () => {
           <div className="flex items-center space-x-2 text-gray-700 mb-4">
             <GiTwoCoins className="text-yellow-500 text-xl" />
             <p className="text-lg">
-              Redeem for <span className="font-semibold">{voucher.points as number}</span>{" "}
+              Redeem for{" "}
+              <span className="font-semibold">{voucher.points as number}</span>{" "}
               points
             </p>
             {!canRedeem && (
@@ -292,55 +484,55 @@ const handleAddToCart = async () => {
           </div>
 
           {/* Terms & Conditions */}
-<div className="mt-6">
-<h2 className="text-lg font-semibold text-gray-800 mb-2">
-  Voucher Terms & Conditions
-</h2>
-  <ul className="space-y-3 text-sm">
-  <li className="flex items-center gap-2">
-    <FaUserCheck className="text-purple-600" />
-    Only registered members with enough points can redeem vouchers.
-  </li>
-  <li className="flex items-center gap-2">
-    <FaGift className="text-purple-600" />
-    Each voucher is single-use and cannot be refunded or exchanged for cash.
-  </li>
-  <li className="flex items-center gap-2">
-    <FaCalendarTimes className="text-purple-600" />
-    Vouchers expire on the stated date and cannot be extended.
-  </li>
-  <li className="flex items-center gap-2">
-    <FaBan className="text-purple-600" />
-    Not valid with other offers or for restricted items.
-  </li>
-  <li className="flex items-center gap-2">
-    <FaRedo className="text-purple-600" />
-    Points are deducted immediately after redemption.
-  </li>
-  <li className="flex items-center gap-2">
-    <FaInfoCircle className="text-purple-600" />
-    Redeeming a voucher means you accept these terms.
-  </li>
-</ul>
-</div>
+          <div className="mt-6">
+            <h2 className="text-lg font-semibold text-gray-800 mb-2">
+              Voucher Terms & Conditions
+            </h2>
+            <ul className="space-y-3 text-sm">
+              <li className="flex items-center gap-2">
+                <FaUserCheck className="text-purple-600" />
+                Only registered members with enough points can redeem vouchers.
+              </li>
+              <li className="flex items-center gap-2">
+                <FaGift className="text-purple-600" />
+                Each voucher is single-use and cannot be refunded or exchanged
+                for cash.
+              </li>
+              <li className="flex items-center gap-2">
+                <FaCalendarTimes className="text-purple-600" />
+                Vouchers expire on the stated date and cannot be extended.
+              </li>
+              <li className="flex items-center gap-2">
+                <FaBan className="text-purple-600" />
+                Not valid with other offers or for restricted items.
+              </li>
+              <li className="flex items-center gap-2">
+                <FaRedo className="text-purple-600" />
+                Points are deducted immediately after redemption.
+              </li>
+              <li className="flex items-center gap-2">
+                <FaInfoCircle className="text-purple-600" />
+                Redeeming a voucher means you accept these terms.
+              </li>
+            </ul>
+          </div>
 
-
-{/* Quantity Selector */}
-<div className="mt-6 flex items-center justify-center space-x-6">
-  <Button
-    onClick={handleDecrease}
-    className="w-10 h-10 flex items-center justify-center bg-[#512da8] text-white rounded-md shadow hover:bg-[#6a3fe3]"
-  >
-    -
-  </Button>
-  <span className="text-xl font-semibold">{quantity}</span>
-  <Button
-    onClick={handleIncrease}
-    className="w-10 h-10 flex items-center justify-center bg-[#512da8] text-white rounded-md shadow hover:bg-[#6a3fe3]"
-  >
-    +
-  </Button>
-</div>
+          {/* Quantity Selector */}
+          <div className="mt-6 flex items-center justify-center space-x-6">
+            <Button
+              onClick={handleDecrease}
+              className="w-10 h-10 flex items-center justify-center bg-[#512da8] text-white rounded-md shadow hover:bg-[#6a3fe3]"
+            >
+              -
+            </Button>
+            <span className="text-xl font-semibold">{quantity}</span>
+            <Button
+              onClick={handleIncrease}
+              className="w-10 h-10 flex items-center justify-center bg-[#512da8] text-white rounded-md shadow hover:bg-[#6a3fe3]"
+            >
+              +
+            </Button>
+          </div>
 
           {/* Action Buttons */}
           <div className="mt-6 flex justify-between items-center">
@@ -350,7 +542,7 @@ const handleAddToCart = async () => {
                   ? "bg-[#512da8] text-white hover:bg-[#6a3fe3] shadow-lg"
                   : "bg-gray-400 text-gray-600 cursor-not-allowed"
               }`}
-              onClick={handleRedeem}
+              onClick={handleRedeemClick}
               disabled={!canRedeem}
             >
               {canRedeem ? "Redeem Now" : "Insufficient Points"}
