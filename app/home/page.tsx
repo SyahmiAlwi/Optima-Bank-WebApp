@@ -426,7 +426,7 @@ export default function HomePage() {
       )}
 
       <div className="flex flex-1 min-h-screen">
-        <aside className="w-40 h-full border-r border-gray-200 flex flex-col pt-6">
+        <aside className="hidden md:flex w-40 h-full border-r border-gray-200 flex-col pt-6">
           <h2 className="px-4 text-lg font-bold text-[#512da8] mb-4">
             Categories
           </h2>
@@ -450,7 +450,7 @@ export default function HomePage() {
           </nav>
         </aside>
 
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-4 sm:p-6">
           <h2 className="text-xl font-semibold mb-4">
             {activeCategory} Vouchers
           </h2>
@@ -535,7 +535,7 @@ export default function HomePage() {
             )}
 
           {/* Vouchers Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
             {searchedVouchers.length > 0 ? (
               searchedVouchers.map((voucher, index) => {
                 const canRedeem = userPoints >= (voucher.points as number);

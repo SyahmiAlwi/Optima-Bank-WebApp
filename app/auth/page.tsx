@@ -175,7 +175,7 @@ export default function AuthPage() {
         </div>
 
         {/* Forms Container */}
-        <div className="relative w-full h-full">
+        <div className="relative w-full h-full pb-16 sm:pb-0">
           {/* Sign In Form */}
           <div className={`${useOverlayLayout ? 'absolute top-0 left-0 w-full sm:w-1/2 h-full p-6 sm:p-10 transition-all duration-[700ms] ease-bank' : 'w-full p-6 transition-all duration-300 ease-bank'} ${isSignup ? (useOverlayLayout ? "sm:translate-x-full -translate-x-full opacity-0 z-0 pointer-events-none" : "hidden") : (useOverlayLayout ? "sm:translate-x-0 translate-x-0 z-30" : "block")}`}>
             <h1 className="text-3xl font-bold text-center text-brand-black">Sign In</h1>

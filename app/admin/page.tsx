@@ -446,7 +446,7 @@ export default function AdminPage() {
       <div className="mx-auto max-w-6xl px-4 py-6">
         {/* Tab Navigation - Centered */}
         <div className="flex justify-center mb-8">
-          <div className="inline-flex rounded-lg bg-purple-800/50 p-1 relative">
+          <div className="inline-flex rounded-lg bg-purple-800/50 p-1 relative overflow-x-auto whitespace-nowrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             {/* Animated Background Slider */}
             <div 
               className={`absolute top-1 bottom-1 rounded-md bg-purple-600 shadow-lg transition-all duration-300 ease-in-out ${
@@ -458,7 +458,7 @@ export default function AdminPage() {
               }`}
             />
             <button
-              className={`relative z-10 px-8 py-3 text-sm font-semibold rounded-md transition-all duration-300 ease-in-out flex items-center justify-center min-w-[100px] ${
+              className={`relative z-10 px-5 sm:px-8 py-3 text-sm font-semibold rounded-md transition-all duration-300 ease-in-out flex items-center justify-center min-w-[88px] sm:min-w-[100px] ${
                 tab === "users" 
                   ? "text-white" 
                   : "text-purple-200 hover:text-white"
@@ -468,7 +468,7 @@ export default function AdminPage() {
               Users
             </button>
             <button
-              className={`relative z-10 px-8 py-3 text-sm font-semibold rounded-md transition-all duration-300 ease-in-out flex items-center justify-center min-w-[100px] ${
+              className={`relative z-10 px-5 sm:px-8 py-3 text-sm font-semibold rounded-md transition-all duration-300 ease-in-out flex items-center justify-center min-w-[88px] sm:min-w-[100px] ${
                 tab === "vouchers" 
                   ? "text-white" 
                   : "text-purple-200 hover:text-white"
@@ -478,7 +478,7 @@ export default function AdminPage() {
               Vouchers
             </button>
             <button
-              className={`relative z-10 px-8 py-3 text-sm font-semibold rounded-md transition-all duration-300 ease-in-out flex items-center justify-center min-w-[100px] ${
+              className={`relative z-10 px-5 sm:px-8 py-3 text-sm font-semibold rounded-md transition-all duration-300 ease-in-out flex items-center justify-center min-w-[88px] sm:min-w-[100px] ${
                 tab === "categories" 
                   ? "text-white" 
                   : "text-purple-200 hover:text-white"
@@ -642,7 +642,7 @@ export default function AdminPage() {
                 {/* Search and Controls Header */}
                 <div className="flex items-center justify-between mb-4 bg-gray-800/30 backdrop-blur rounded-lg p-4 border border-gray-700/50">
                   {/* Search Bar */}
-                  <div className="relative w-80">
+                  <div className="relative w-full md:w-80">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -748,7 +748,7 @@ export default function AdminPage() {
                     }
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
                     {filteredVouchers.map((v, index) => (
                       <div 
                         key={v.id} 

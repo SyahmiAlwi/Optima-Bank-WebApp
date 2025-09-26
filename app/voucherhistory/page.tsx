@@ -368,7 +368,7 @@ export default function VoucherHistoryPage() {
                     {filteredRedemptions.length !== redemptions.length && (
                       <span> out of {redemptions.length} total</span>
                     )}
-                    {searchTerm && <span> matching "{searchTerm}"</span>}
+                    {searchTerm && <span> matching &quot;{searchTerm}&quot;</span>}
                     {(dateFrom || dateTo) && (
                       <span className="block sm:inline mt-1 sm:mt-0">
                         {" "}
@@ -408,7 +408,7 @@ export default function VoucherHistoryPage() {
             <div className="text-center py-8 sm:py-12 px-4">
               <FaHistory className="text-gray-400 text-4xl sm:text-6xl mx-auto mb-3 sm:mb-4" />
               <p className="text-gray-500 text-base sm:text-lg mb-3 sm:mb-4">
-                You haven't redeemed any vouchers yet
+                You haven&apos;t redeemed any vouchers yet
               </p>
               <Button
                 onClick={() => router.push("/home")}

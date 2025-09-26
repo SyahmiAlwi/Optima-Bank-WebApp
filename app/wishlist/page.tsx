@@ -328,7 +328,7 @@ export default function WishlistPage() {
               Confirm Removal
             </h3>
             <p className="text-gray-600 mb-6">
-              Are you sure you want to remove "{itemToDelete.voucherTitle}" from
+              Are you sure you want to remove &quot;{itemToDelete.voucherTitle}&quot; from
               your wishlist?
             </p>
             <div className="flex gap-4">
