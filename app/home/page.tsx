@@ -473,26 +473,19 @@ export default function HomePage() {
           {activeCategory === "All" &&
             promoVouchers.length > 0 &&
             searchTerm === "" && (
-              <div className="w-full flex flex-col items-center py-6 mb-6">
-                <div
-                  className="relative bg-gradient-to-r from-yellow-200 to-purple-200 rounded-xl shadow-lg flex items-center mb-6"
-                  style={{
-                    width: "700px",
-                    minHeight: "190px",
-                    padding: "24px 32px",
-                    boxSizing: "border-box",
-                  }}
-                >
+              <div className="w-full flex flex-col items-center py-4 sm:py-6 mb-6">
+                <div className="relative w-full max-w-xl sm:max-w-2xl md:max-w-3xl min-h-[180px] sm:min-h-[190px] bg-gradient-to-r from-yellow-200 to-purple-200 rounded-xl shadow-lg flex items-center px-4 sm:px-6 py-4 sm:py-6 mb-4">
                   <button
                     onClick={handlePrev}
                     disabled={promoIndex === 0}
-                    className="absolute left-[-22px] top-1/2 transform -translate-y-1/2 text-2xl bg-white rounded-full shadow border border-gray-200 hover:bg-yellow-100 disabled:opacity-50 w-11 h-11 flex items-center justify-center"
+                    className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-xl sm:text-2xl bg-white rounded-full shadow border border-gray-200 hover:bg-yellow-100 disabled:opacity-50 w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center"
+                    aria-label="Previous"
                   >
                     &#8592;
                   </button>
 
-                  <div className="flex items-center gap-6 w-full">
-                    <div className="w-60 h-28 rounded-2xl overflow-hidden flex-shrink-0 bg-white">
+                  <div className="flex items-center gap-3 sm:gap-6 w-full">
+                    <div className="w-36 h-24 sm:w-60 sm:h-28 rounded-2xl overflow-hidden flex-shrink-0 bg-white">
                       <img
                         src={resolveVoucherImage(
                           promoVouchers[promoIndex].image
@@ -502,15 +495,15 @@ export default function HomePage() {
                       />
                     </div>
                     <div className="flex flex-col items-center justify-center flex-1 ml-2 text-center">
-                      <h3 className="text-xl font-bold text-[#512da8] mb-1">
+                      <h3 className="text-lg sm:text-xl font-bold text-[#512da8] mb-1">
                         {promoVouchers[promoIndex].title as string}
                       </h3>
-                      <div className="flex items-center justify-center text-yellow-500 font-semibold text-lg mb-3">
+                      <div className="flex items-center justify-center text-yellow-500 font-semibold text-base sm:text-lg mb-3">
                         <GiTwoCoins className="mr-2" />
                         {promoVouchers[promoIndex].points as number} points
                       </div>
                       <Button
-                        className="bg-yellow-400 text-[#512da8] font-bold px-4 py-2 text-base shadow-lg rounded-lg w-40"
+                        className="bg-yellow-400 text-[#512da8] font-bold px-4 py-2 text-sm sm:text-base shadow-lg rounded-lg w-36 sm:w-40"
                         onClick={() =>
                           handleRedeemClick(promoVouchers[promoIndex])
                         }
@@ -523,7 +516,8 @@ export default function HomePage() {
                   <button
                     onClick={handleNext}
                     disabled={promoIndex === promoVouchers.length - 1}
-                    className="absolute right-[-22px] top-1/2 transform -translate-y-1/2 text-2xl bg-white rounded-full shadow border border-gray-200 hover:bg-yellow-100 disabled:opacity-50 w-11 h-11 flex items-center justify-center"
+                    className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-xl sm:text-2xl bg-white rounded-full shadow border border-gray-200 hover:bg-yellow-100 disabled:opacity-50 w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center"
+                    aria-label="Next"
                   >
                     &#8594;
                   </button>
@@ -538,7 +532,7 @@ export default function HomePage() {
             )}
 
           {/* Vouchers Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
             {searchedVouchers.length > 0 ? (
               searchedVouchers.map((voucher, index) => {
                 const canRedeem = userPoints >= (voucher.points as number);
