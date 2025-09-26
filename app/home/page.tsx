@@ -491,7 +491,9 @@ export default function HomePage() {
                   <div className="flex items-center gap-6 w-full">
                     <div className="w-60 h-28 rounded-2xl overflow-hidden flex-shrink-0 bg-white">
                       <img
-                        src={resolveVoucherImage(promoVouchers[promoIndex].image)}
+                        src={resolveVoucherImage(
+                          promoVouchers[promoIndex].image
+                        )}
                         alt={promoVouchers[promoIndex].title as string}
                         className="w-full h-full object-cover"
                       />
@@ -542,7 +544,7 @@ export default function HomePage() {
                 return (
                   <div
                     key={voucher.id as number}
-                    className="bg-white rounded-lg shadow-md p-4"
+                    className="bg-white rounded-lg shadow-md p-4 flex flex-col h-full"
                   >
                     <img
                       src={resolveVoucherImage(voucher.image)}
@@ -555,58 +557,62 @@ export default function HomePage() {
                       }
                     />
 
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-semibold text-gray-800">
+                    {/* Title and Wishlist - Fixed height container */}
+                    <div className="flex items-start justify-between mb-3 min-h-[48px]">
+                      <h3 className="font-semibold text-gray-800 text-base leading-tight flex-1 pr-2">
                         {voucher.title as string}
                       </h3>
-                      {/* Heart toggle with proper wishlist functionality */}
-                      {isInWishlist ? (
-                        <FaHeart
-                          className="text-red-500 cursor-pointer text-xl transition-transform transform hover:scale-110"
-                          onClick={() =>
-                            toggleWishlist(
-                              voucher.id as number,
-                              voucher.title as string
-                            )
-                          }
-                          title="Remove from wishlist"
-                        />
-                      ) : (
-                        <FaRegHeart
-                          className="text-gray-500 cursor-pointer text-xl hover:text-red-500 transition-transform transform hover:scale-110"
-                          onClick={() =>
-                            toggleWishlist(
-                              voucher.id as number,
-                              voucher.title as string
-                            )
-                          }
-                          title="Add to wishlist"
-                        />
-                      )}
+                      <div className="flex-shrink-0">
+                        {isInWishlist ? (
+                          <FaHeart
+                            className="text-red-500 cursor-pointer text-lg transition-transform transform hover:scale-110"
+                            onClick={() =>
+                              toggleWishlist(
+                                voucher.id as number,
+                                voucher.title as string
+                              )
+                            }
+                            title="Remove from wishlist"
+                          />
+                        ) : (
+                          <FaRegHeart
+                            className="text-gray-500 cursor-pointer text-lg hover:text-red-500 transition-transform transform hover:scale-110"
+                            onClick={() =>
+                              toggleWishlist(
+                                voucher.id as number,
+                                voucher.title as string
+                              )
+                            }
+                            title="Add to wishlist"
+                          />
+                        )}
+                      </div>
                     </div>
 
-                    <div className="flex items-center justify-between mb-2">
+                    {/* Points and insufficient message - Fixed height container */}
+                    <div className="flex items-center justify-between mb-4 min-h-[20px]">
                       <span className="flex items-center text-yellow-400 font-semibold text-sm">
                         <GiTwoCoins className="mr-1 text-yellow-400 text-base" />
                         {voucher.points as number}
                       </span>
                       {!canRedeem && (
-                        <p className="text-red-500 text-xs">
+                        <p className="text-red-500 text-xs text-right">
                           Need {(voucher.points as number) - userPoints} more
                         </p>
                       )}
                     </div>
 
-                    <div className="flex justify-between items-center mt-3">
+                    {/* Action buttons - Push to bottom with margin-top auto */}
+                    <div className="flex justify-between items-center mt-auto">
                       <Button
-                        className="bg-[#512da8] text-white px-3 py-1 text-sm disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        className="bg-[#512da8] text-white px-4 py-2 text-sm rounded disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                         onClick={() => handleRedeemClick(voucher)}
                         disabled={!canRedeem}
                       >
                         Redeem
                       </Button>
                       <FaShoppingCart
-                        className={`cursor-pointer text-lg ${
+                        className={`cursor-pointer text-xl transition-colors ${
                           canRedeem
                             ? "hover:text-[#512da8] text-gray-600"
                             : "text-gray-400 cursor-not-allowed opacity-50"

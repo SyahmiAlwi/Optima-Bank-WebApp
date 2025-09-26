@@ -214,61 +214,63 @@ export default function VoucherHistoryPage() {
       <Toaster position="top-center" />
       <Navbar user={user ?? undefined} />
 
-      <div className="flex-1 p-6">
+      <div className="flex-1 p-3 sm:p-6">
         <div className="max-w-6xl mx-auto">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-3">
-              <FaHistory className="text-2xl text-[#512da8]" />
-              <h1 className="text-2xl font-bold text-gray-800">
+          {/* Header - Mobile Responsive */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-3">
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <FaHistory className="text-xl sm:text-2xl text-[#512da8]" />
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
                 Voucher History
               </h1>
             </div>
             {filteredRedemptions.length > 0 && (
               <Button
                 onClick={handleDownloadAll}
-                className="bg-[#512da8] text-white px-4 py-2 hover:bg-[#6a3fe3] flex items-center gap-2"
+                className="bg-[#512da8] text-white px-3 sm:px-4 py-2 hover:bg-[#6a3fe3] flex items-center justify-center gap-2 text-sm sm:text-base w-full sm:w-auto"
               >
                 <FaFileDownload />
-                Download All ({filteredRedemptions.length})
+                <span className="hidden xs:inline">Download All</span>
+                <span className="xs:hidden">All</span> (
+                {filteredRedemptions.length})
               </Button>
             )}
           </div>
 
-          {/* Statistics Summary - Moved to top */}
+          {/* Statistics Summary - Mobile Responsive */}
           {!error && redemptions.length > 0 && (
-            <div className="mb-6 bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-lg font-semibold text-gray-800 mb-4">
+            <div className="mb-4 sm:mb-6 bg-white rounded-lg shadow-md p-4 sm:p-6">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4">
                 Redemption Summary
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="text-center bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg p-4">
-                  <div className="text-3xl font-bold text-[#512da8] mb-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                <div className="text-center bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg p-3 sm:p-4">
+                  <div className="text-2xl sm:text-3xl font-bold text-[#512da8] mb-1 sm:mb-2">
                     {redemptions.length}
                   </div>
-                  <div className="text-sm text-gray-600 font-medium">
+                  <div className="text-xs sm:text-sm text-gray-600 font-medium">
                     Total Vouchers Redeemed
                   </div>
                 </div>
-                <div className="text-center bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-lg p-4">
-                  <div className="text-3xl font-bold text-yellow-600 mb-2">
+                <div className="text-center bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-lg p-3 sm:p-4">
+                  <div className="text-2xl sm:text-3xl font-bold text-yellow-600 mb-1 sm:mb-2">
                     {redemptions.reduce(
                       (sum, r) => sum + (r.points_used as number),
                       0
                     )}
                   </div>
-                  <div className="text-sm text-gray-600 font-medium">
+                  <div className="text-xs sm:text-sm text-gray-600 font-medium">
                     Total Points Used
                   </div>
                 </div>
-                <div className="text-center bg-gradient-to-r from-green-50 to-green-100 rounded-lg p-4">
-                  <div className="text-3xl font-bold text-green-600 mb-2">
+                <div className="text-center bg-gradient-to-r from-green-50 to-green-100 rounded-lg p-3 sm:p-4">
+                  <div className="text-2xl sm:text-3xl font-bold text-green-600 mb-1 sm:mb-2">
                     {redemptions.reduce(
                       (sum, r) => sum + (r.quantity as number),
                       0
                     )}
                   </div>
-                  <div className="text-sm text-gray-600 font-medium">
+                  <div className="text-xs sm:text-sm text-gray-600 font-medium">
                     Total Items Redeemed
                   </div>
                 </div>
@@ -276,49 +278,51 @@ export default function VoucherHistoryPage() {
             </div>
           )}
 
-          {/* Search and Filter Bar */}
+          {/* Search and Filter Bar - Mobile Responsive */}
           {!error && redemptions.length > 0 && (
-            <div className="mb-6 bg-white rounded-lg shadow-md p-4">
-              <div className="flex flex-col lg:flex-row gap-4">
+            <div className="mb-4 sm:mb-6 bg-white rounded-lg shadow-md p-3 sm:p-4">
+              <div className="flex flex-col gap-3 sm:gap-4">
                 {/* Search Bar */}
                 <div className="flex-1">
                   <div className="relative">
-                    <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm" />
                     <input
                       type="text"
-                      placeholder="Search vouchers by title or description..."
+                      placeholder="Search vouchers..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#512da8] focus:border-transparent outline-none"
+                      className="w-full pl-9 sm:pl-10 pr-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#512da8] focus:border-transparent outline-none text-sm sm:text-base"
                     />
                   </div>
                 </div>
 
-                {/* Filter Toggle Button */}
-                <div className="flex items-center space-x-2">
+                {/* Filter Toggle Buttons */}
+                <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-2 xs:gap-2">
                   <Button
                     onClick={() => setShowFilters(!showFilters)}
-                    className={`px-4 py-3 flex items-center gap-2 ${
+                    className={`px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-center gap-2 text-sm sm:text-base flex-1 xs:flex-none ${
                       showFilters || hasActiveFilters
                         ? "bg-[#512da8] text-white"
                         : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                     }`}
                   >
                     <FaFilter />
-                    Filters{" "}
-                    {hasActiveFilters &&
-                      `(${
-                        [searchTerm, dateFrom, dateTo].filter(Boolean).length
-                      })`}
+                    <span>
+                      Filters{" "}
+                      {hasActiveFilters &&
+                        `(${
+                          [searchTerm, dateFrom, dateTo].filter(Boolean).length
+                        })`}
+                    </span>
                   </Button>
 
                   {hasActiveFilters && (
                     <Button
                       onClick={clearAllFilters}
-                      className="px-4 py-3 bg-red-500 text-white hover:bg-red-600 flex items-center gap-2"
+                      className="px-3 sm:px-4 py-2 sm:py-3 bg-red-500 text-white hover:bg-red-600 flex items-center justify-center gap-2 text-sm sm:text-base flex-1 xs:flex-none"
                     >
                       <FaTimes />
-                      Clear
+                      <span>Clear</span>
                     </Button>
                   )}
                 </div>
@@ -326,28 +330,28 @@ export default function VoucherHistoryPage() {
 
               {/* Expandable Date Filters */}
               {(showFilters || hasActiveFilters) && (
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-200">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                         From Date
                       </label>
                       <input
                         type="date"
                         value={dateFrom}
                         onChange={(e) => setDateFrom(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#512da8] focus:border-transparent outline-none"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#512da8] focus:border-transparent outline-none text-sm"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                         To Date
                       </label>
                       <input
                         type="date"
                         value={dateTo}
                         onChange={(e) => setDateTo(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#512da8] focus:border-transparent outline-none"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#512da8] focus:border-transparent outline-none text-sm"
                       />
                     </div>
                   </div>
@@ -356,27 +360,25 @@ export default function VoucherHistoryPage() {
 
               {/* Filter Results Summary */}
               {hasActiveFilters && (
-                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm text-blue-800">
-                      <strong>
-                        Found {filteredRedemptions.length} voucher(s)
-                      </strong>
-                      {filteredRedemptions.length !== redemptions.length && (
-                        <span> out of {redemptions.length} total</span>
-                      )}
-                      {searchTerm && <span> matching "{searchTerm}"</span>}
-                      {(dateFrom || dateTo) && (
-                        <span>
-                          {" "}
-                          {dateFrom && dateTo
-                            ? `between ${dateFrom} and ${dateTo}`
-                            : dateFrom
-                            ? `from ${dateFrom}`
-                            : `until ${dateTo}`}
-                        </span>
-                      )}
-                    </div>
+                <div className="mt-3 sm:mt-4 p-3 bg-blue-50 rounded-lg">
+                  <div className="text-xs sm:text-sm text-blue-800">
+                    <strong>
+                      Found {filteredRedemptions.length} voucher(s)
+                    </strong>
+                    {filteredRedemptions.length !== redemptions.length && (
+                      <span> out of {redemptions.length} total</span>
+                    )}
+                    {searchTerm && <span> matching "{searchTerm}"</span>}
+                    {(dateFrom || dateTo) && (
+                      <span className="block sm:inline mt-1 sm:mt-0">
+                        {" "}
+                        {dateFrom && dateTo
+                          ? `between ${dateFrom} and ${dateTo}`
+                          : dateFrom
+                          ? `from ${dateFrom}`
+                          : `until ${dateTo}`}
+                      </span>
+                    )}
                   </div>
                 </div>
               )}
@@ -385,16 +387,16 @@ export default function VoucherHistoryPage() {
 
           {/* Error or No Data Message */}
           {error && (
-            <div className="text-center py-12">
-              <FaHistory className="text-gray-400 text-6xl mx-auto mb-4" />
-              <p className="text-gray-500 text-lg mb-4">
+            <div className="text-center py-8 sm:py-12 px-4">
+              <FaHistory className="text-gray-400 text-4xl sm:text-6xl mx-auto mb-3 sm:mb-4" />
+              <p className="text-gray-500 text-base sm:text-lg mb-3 sm:mb-4">
                 {error === "Redemptions table not found"
                   ? "Voucher history is not available yet. Redeem some vouchers to see them here!"
                   : "Unable to load voucher history"}
               </p>
               <Button
                 onClick={() => router.push("/home")}
-                className="bg-[#512da8] text-white px-6 py-2"
+                className="bg-[#512da8] text-white px-4 sm:px-6 py-2 text-sm sm:text-base"
               >
                 Browse Vouchers
               </Button>
@@ -403,14 +405,14 @@ export default function VoucherHistoryPage() {
 
           {/* No Redemptions Message */}
           {!error && redemptions.length === 0 && (
-            <div className="text-center py-12">
-              <FaHistory className="text-gray-400 text-6xl mx-auto mb-4" />
-              <p className="text-gray-500 text-lg mb-4">
+            <div className="text-center py-8 sm:py-12 px-4">
+              <FaHistory className="text-gray-400 text-4xl sm:text-6xl mx-auto mb-3 sm:mb-4" />
+              <p className="text-gray-500 text-base sm:text-lg mb-3 sm:mb-4">
                 You haven't redeemed any vouchers yet
               </p>
               <Button
                 onClick={() => router.push("/home")}
-                className="bg-[#512da8] text-white px-6 py-2"
+                className="bg-[#512da8] text-white px-4 sm:px-6 py-2 text-sm sm:text-base"
               >
                 Browse Vouchers
               </Button>
@@ -422,23 +424,23 @@ export default function VoucherHistoryPage() {
             redemptions.length > 0 &&
             filteredRedemptions.length === 0 &&
             hasActiveFilters && (
-              <div className="text-center py-12">
-                <FaSearch className="text-gray-400 text-6xl mx-auto mb-4" />
-                <p className="text-gray-500 text-lg mb-4">
+              <div className="text-center py-8 sm:py-12 px-4">
+                <FaSearch className="text-gray-400 text-4xl sm:text-6xl mx-auto mb-3 sm:mb-4" />
+                <p className="text-gray-500 text-base sm:text-lg mb-3 sm:mb-4">
                   No vouchers found matching your search criteria
                 </p>
                 <Button
                   onClick={clearAllFilters}
-                  className="bg-[#512da8] text-white px-6 py-2"
+                  className="bg-[#512da8] text-white px-4 sm:px-6 py-2 text-sm sm:text-base"
                 >
                   Clear All Filters
                 </Button>
               </div>
             )}
 
-          {/* Redemptions List */}
+          {/* Redemptions List - Mobile Responsive */}
           {!error && filteredRedemptions.length > 0 && (
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {filteredRedemptions.map((redemption) => {
                 const voucher = redemption.voucher as Record<string, unknown>;
                 const redemptionDate = new Date(
@@ -448,55 +450,110 @@ export default function VoucherHistoryPage() {
                 return (
                   <div
                     key={redemption.id as number}
-                    className="bg-white rounded-lg shadow-md p-6 flex items-center space-x-4 hover:shadow-lg transition-shadow"
+                    className="bg-white rounded-lg shadow-md p-3 sm:p-6 hover:shadow-lg transition-shadow"
                   >
-                    {/* Voucher Image */}
-                    <img
-                      src={resolveVoucherImage(voucher.image)}
-                      alt={voucher.title as string}
-                      className="w-20 h-20 object-cover rounded-md flex-shrink-0"
-                    />
-
-                    {/* Voucher Info */}
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-lg font-semibold text-gray-800">
-                          {voucher.title as string}
-                        </h3>
-                        <span className="text-sm font-medium text-[#512da8] bg-purple-50 px-3 py-1 rounded-full">
-                          {categoryMap[voucher.category_id as number] ||
-                            "Other"}
-                        </span>
+                    {/* Mobile Layout (Column) */}
+                    <div className="flex flex-col sm:hidden space-y-3">
+                      {/* Image and Title Row */}
+                      <div className="flex items-start space-x-3">
+                        <img
+                          src={resolveVoucherImage(voucher.image)}
+                          alt={voucher.title as string}
+                          className="w-16 h-16 object-cover rounded-md flex-shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between mb-1">
+                            <h3 className="text-sm font-semibold text-gray-800 pr-2 line-clamp-2">
+                              {voucher.title as string}
+                            </h3>
+                            <span className="text-xs font-medium text-[#512da8] bg-purple-50 px-2 py-1 rounded-full whitespace-nowrap ml-1">
+                              {categoryMap[voucher.category_id as number] ||
+                                "Other"}
+                            </span>
+                          </div>
+                          <p className="text-gray-600 text-xs mb-2 line-clamp-2">
+                            {voucher.description as string}
+                          </p>
+                        </div>
                       </div>
 
-                      <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                        {voucher.description as string}
-                      </p>
-
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4 text-sm text-gray-600">
+                      {/* Details Row */}
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-600">
+                        <div className="flex items-center space-x-3">
                           <div className="flex items-center space-x-1">
-                            <GiTwoCoins className="text-yellow-500" />
-                            <span>
-                              {redemption.points_used as number} points used
-                            </span>
+                            <GiTwoCoins className="text-yellow-500 text-sm" />
+                            <span>{redemption.points_used as number} pts</span>
                           </div>
                           <div className="flex items-center space-x-1">
                             <span>Qty: {redemption.quantity as number}</span>
                           </div>
-                          <div className="flex items-center space-x-1">
-                            <FaCalendar className="text-gray-400" />
-                            <span>{redemptionDate.toLocaleDateString()}</span>
-                          </div>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <FaCalendar className="text-gray-400" />
+                          <span>{redemptionDate.toLocaleDateString()}</span>
+                        </div>
+                      </div>
+
+                      {/* Download Button */}
+                      <Button
+                        onClick={() => handleDownloadVoucher(redemption)}
+                        className="bg-green-600 text-white px-3 py-2 text-xs hover:bg-green-700 flex items-center justify-center gap-2 w-full"
+                      >
+                        <FaDownload />
+                        Re-download
+                      </Button>
+                    </div>
+
+                    {/* Desktop Layout (Row) - Hidden on mobile */}
+                    <div className="hidden sm:flex items-center space-x-4">
+                      {/* Voucher Image */}
+                      <img
+                        src={resolveVoucherImage(voucher.image)}
+                        alt={voucher.title as string}
+                        className="w-20 h-20 object-cover rounded-md flex-shrink-0"
+                      />
+
+                      {/* Voucher Info */}
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="text-lg font-semibold text-gray-800">
+                            {voucher.title as string}
+                          </h3>
+                          <span className="text-sm font-medium text-[#512da8] bg-purple-50 px-3 py-1 rounded-full">
+                            {categoryMap[voucher.category_id as number] ||
+                              "Other"}
+                          </span>
                         </div>
 
-                        <Button
-                          onClick={() => handleDownloadVoucher(redemption)}
-                          className="bg-green-600 text-white px-4 py-2 text-sm hover:bg-green-700 flex items-center gap-2"
-                        >
-                          <FaDownload />
-                          Re-download
-                        </Button>
+                        <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                          {voucher.description as string}
+                        </p>
+
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-4 text-sm text-gray-600">
+                            <div className="flex items-center space-x-1">
+                              <GiTwoCoins className="text-yellow-500" />
+                              <span>
+                                {redemption.points_used as number} points used
+                              </span>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <span>Qty: {redemption.quantity as number}</span>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <FaCalendar className="text-gray-400" />
+                              <span>{redemptionDate.toLocaleDateString()}</span>
+                            </div>
+                          </div>
+
+                          <Button
+                            onClick={() => handleDownloadVoucher(redemption)}
+                            className="bg-green-600 text-white px-4 py-2 text-sm hover:bg-green-700 flex items-center gap-2"
+                          >
+                            <FaDownload />
+                            Re-download
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </div>
