@@ -138,6 +138,7 @@ export default function VoucherHistoryPage() {
       description: voucher.description as string,
       points: redemption.points_used as number,
       quantity: redemption.quantity as number,
+      image: resolveVoucherImage(voucher.image), // Add resolved image
     };
 
     try {
@@ -166,7 +167,15 @@ export default function VoucherHistoryPage() {
     try {
       generateAllVouchersPDF(
         filteredRedemptions.map((redemption) => ({
-          voucher: redemption.voucher as { title: string; description: string },
+          voucher: {
+            title: (redemption.voucher as Record<string, unknown>)
+              .title as string,
+            description: (redemption.voucher as Record<string, unknown>)
+              .description as string,
+            image: resolveVoucherImage(
+              (redemption.voucher as Record<string, unknown>).image
+            ), // Add resolved image
+          },
           points_used: redemption.points_used as number,
           quantity: redemption.quantity as number,
           redeemed_at: redemption.redeemed_at as string,
@@ -368,7 +377,9 @@ export default function VoucherHistoryPage() {
                     {filteredRedemptions.length !== redemptions.length && (
                       <span> out of {redemptions.length} total</span>
                     )}
-                    {searchTerm && <span> matching &quot;{searchTerm}&quot;</span>}
+                    {searchTerm && (
+                      <span> matching &quot;{searchTerm}&quot;</span>
+                    )}
                     {(dateFrom || dateTo) && (
                       <span className="block sm:inline mt-1 sm:mt-0">
                         {" "}

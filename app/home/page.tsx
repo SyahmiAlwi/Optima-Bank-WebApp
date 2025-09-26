@@ -51,6 +51,7 @@ export default function HomePage() {
     description: string;
     points: number;
     quantity: number;
+    image?: string;
   } | null>(null);
   const router = useRouter();
 
@@ -227,6 +228,7 @@ export default function HomePage() {
         description: voucherToRedeem.description as string,
         points: voucherPoints,
         quantity: 1,
+        image: resolveVoucherImage(voucherToRedeem.image),
       });
 
       // Close confirm modal and show success modal
@@ -255,6 +257,7 @@ export default function HomePage() {
     description: string;
     points: number;
     quantity: number;
+    image?: string;
   }) => {
     try {
       generateVoucherPDF(voucher, user?.email || "Unknown User");

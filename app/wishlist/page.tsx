@@ -49,6 +49,7 @@ export default function WishlistPage() {
     description: string;
     points: number;
     quantity: number;
+    image?: string;
   } | null>(null);
   const router = useRouter();
 
@@ -197,6 +198,7 @@ export default function WishlistPage() {
         description: voucherToRedeem.description as string,
         points: voucherPoints,
         quantity: 1,
+        image: resolveVoucherImage(voucherToRedeem.image), // Add resolved image
       });
 
       // Close confirm modal and show success modal
@@ -225,6 +227,7 @@ export default function WishlistPage() {
     description: string;
     points: number;
     quantity: number;
+    image?: string; // Add image property
   }) => {
     try {
       generateVoucherPDF(voucher, user?.email || "Unknown User");
@@ -328,8 +331,8 @@ export default function WishlistPage() {
               Confirm Removal
             </h3>
             <p className="text-gray-600 mb-6">
-              Are you sure you want to remove &quot;{itemToDelete.voucherTitle}&quot; from
-              your wishlist?
+              Are you sure you want to remove &quot;{itemToDelete.voucherTitle}
+              &quot; from your wishlist?
             </p>
             <div className="flex gap-4">
               <Button

@@ -14,8 +14,8 @@ import {
   addToCart,
   addToWishlist,
   redeemVoucher,
+  generateVoucherPDF,
 } from "./action";
-import { generateVoucherPDF } from "../home/action";
 import toast, { Toaster } from "react-hot-toast";
 import {
   FaUserCheck,
@@ -43,6 +43,7 @@ function VoucherDetailsContent() {
     description: string;
     points: number;
     quantity: number;
+    image?: string;
   } | null>(null);
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -176,6 +177,7 @@ function VoucherDetailsContent() {
         description: voucher.description as string,
         points: voucherPoints,
         quantity: 1,
+        image: resolveVoucherImage(voucher.image), // Add resolved image
       });
 
       // Close confirm modal and show success modal
@@ -201,6 +203,7 @@ function VoucherDetailsContent() {
     description: string;
     points: number;
     quantity: number;
+    image?: string; // Add image property
   }) => {
     try {
       generateVoucherPDF(voucher, user?.email || "Unknown User");

@@ -58,6 +58,7 @@ export default function CartPage() {
       description: string;
       points: number;
       quantity: number;
+      image?: string;
     }>
   >([]);
 
@@ -456,6 +457,7 @@ export default function CartPage() {
         description: item.voucher.description,
         points: item.voucher.points,
         quantity: item.quantity,
+        image: resolveVoucherImage(item.voucher.image),
       }));
       setRedeemedVouchers(vouchersForPDF);
 
@@ -528,6 +530,7 @@ export default function CartPage() {
     description: string;
     points: number;
     quantity: number;
+    image?: string;
   }) => {
     try {
       generateVoucherPDF(voucher, user?.email || "Unknown User");
@@ -547,6 +550,7 @@ export default function CartPage() {
   // Handle download all vouchers
   const downloadAllVouchers = () => {
     try {
+      // The redeemedVouchers already contain the image data from checkout
       generateAllVouchersPDF(redeemedVouchers, user?.email || "Unknown User");
       toast.success("Downloaded all vouchers as bundle", {
         duration: 3000,
