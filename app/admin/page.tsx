@@ -406,7 +406,7 @@ export default function AdminPage() {
 
       {/* Header */}
       <header className="sticky top-0 z-10 bg-purple-900/90 backdrop-blur border-b border-purple-700/50">
-        <div className="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between">
+        <div className="mx-auto max-w-6xl px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-4">
             {/* Optima Bank Logo */}
             <div className="flex items-center gap-3">
@@ -426,8 +426,8 @@ export default function AdminPage() {
           </div>
           
           {/* Welcome Message */}
-          <div className="flex items-center gap-6">
-            <div className="text-right leading-tight">
+          <div className="flex items-center gap-4 sm:gap-6">
+            <div className="text-right leading-tight hidden sm:block">
               <p className="text-purple-200 text-sm">Welcome, admin!</p>
               <p className="text-white font-medium">Manage users and vouchers</p>
             </div>
@@ -443,9 +443,9 @@ export default function AdminPage() {
         </div>
       </header>
 
-      <div className="mx-auto max-w-6xl px-4 py-6">
+      <div className="mx-auto max-w-6xl px-3 sm:px-4 py-4 sm:py-6">
         {/* Tab Navigation - Centered */}
-        <div className="flex justify-center mb-8">
+        <div className="flex justify-center mb-6 sm:mb-8">
           <div className="inline-flex rounded-lg bg-purple-800/50 p-1 relative overflow-x-auto whitespace-nowrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             {/* Animated Background Slider */}
             <div 
@@ -640,9 +640,9 @@ export default function AdminPage() {
             {tab === "vouchers" && (
               <section className="max-w-7xl mx-auto">
                 {/* Search and Controls Header */}
-                <div className="flex items-center justify-between mb-4 bg-gray-800/30 backdrop-blur rounded-lg p-4 border border-gray-700/50">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 mb-4 bg-gray-800/30 backdrop-blur rounded-lg p-4 border border-gray-700/50">
                   {/* Search Bar */}
-                  <div className="relative w-full md:w-80">
+                  <div className="relative w-full sm:w-80">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -700,7 +700,7 @@ export default function AdminPage() {
                 </div>
 
                 {/* Category Filter - Standalone */}
-                <div className="mb-6 bg-gray-800/20 backdrop-blur rounded-lg p-4 border border-gray-700/30">
+                  <div className="mb-6 bg-gray-800/20 backdrop-blur rounded-lg p-4 border border-gray-700/30">
                   <div className="flex items-center gap-3 mb-3">
                     <span className="text-gray-300 text-sm font-medium">Filter by Category:</span>
                   </div>
